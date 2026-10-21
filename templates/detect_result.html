@@ -1,22 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Detection Result</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-  <h1>Detection Result</h1>
-  {% if result %}
-    <p>Detections: {{ result.detections|length }}</p>
-    <p>Inference time: {{ '%.2f'|format(result.detect_time) }} s</p>
-    <p>Confidence threshold: {{ result.confidence }}</p>
-    <div class="image-container">
-      <img src="{{ url_for('detect_image', result_id=result_id) }}" alt="Annotated detection result">
-    </div>
-  {% else %}
-    <p>No result found.</p>
-  {% endif %}
-  <p><a href="{{ url_for('dashboard') }}">← Back to Dashboard</a></p>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">DETECTION RESULT <span class="eyebrow-line"></span> {{ result.image_name|upper }}</div><h1>Detection Result</h1><p>{{ result.detections|length }} detections · inference {{ '%.2f'|format(result.detect_time) }} s · confidence threshold {{ result.confidence }} · model {{ result.model.model_file }} (classes: {{ result.model.class_names|join(', ') }})</p></div><a class="button button-primary" href="{{ url_for('detect_page') }}">Run another</a></section>
+<section class="panel table-panel report-table">
+  <div class="image-container"><img src="{{ url_for('detect_image', result_id=result_id) }}" alt="Annotated detection result" style="max-width:100%;height:auto;border-radius:12px;"></div>
+  {% if result.model.class_agnostic %}<p class="dashboard-honesty-note">This detector has a single class, so boxes locate products but do not identify SKUs.</p>{% endif %}
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>MODEL LABEL</th><th>CONFIDENCE</th><th>BOX [x1, y1, x2, y2]</th></tr></thead><tbody>
+  {% for detection in result.detections %}<tr><td>{{ loop.index }}</td><td>{{ detection.label }}</td><td>{{ '%.2f'|format(detection.confidence) }}</td><td class="sku">[{{ detection.box|map('int')|join(', ') }}]</td></tr>{% else %}<tr><td colspan="4" class="empty-cell">No objects were detected at this confidence threshold.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

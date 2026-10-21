@@ -58,7 +58,9 @@ class ProductMatchingPipeline:
         detections: list[dict[str, Any]],
         catalogue: list[dict[str, Any]],
         planogram: list[dict[str, Any]],
+        slot_mapper: Any = None,
     ) -> dict[str, Any]:
+        slot_mapper = slot_mapper or self.slot_mapper
         with Image.open(image_path) as opened:
             image = opened.convert("RGB")
         try:
@@ -85,12 +87,14 @@ class ProductMatchingPipeline:
             ]
             matching_error = str(error)
 
-        comparison = compare_planogram(planogram, matches, self.slot_mapper)
+        comparison = compare_planogram(planogram, matches, slot_mapper)
         slots = [finding for finding in comparison["findings"] if "slot" in finding]
         unmatched = [finding for finding in comparison["findings"] if "slot" not in finding]
-        mapping_trusted = False
+        mapping_trusted = bool(getattr(slot_mapper, "trusted", False))
         assumptions = [
             "Equal-grid mapping estimates horizontal row bands and left-to-right slots from bbox centers.",
+            "The operator confirmed the image follows the calibrated fixed-camera shelf layout."
+            if mapping_trusted else
             "This mapping is not perspective-aware or calibrated against shelf boundaries.",
             "SKU acceptance requires a labelled validation calibration file; otherwise all candidates remain Needs Review.",
             "A product with no mapped detection is Needs Review, not Missing, because occlusion/model failure cannot be ruled out.",
@@ -107,6 +111,7 @@ class ProductMatchingPipeline:
             },
             "calibration": {
                 "path": str(self.calibration_path),
+                "model_id": self.recognizer.model_id,
                 "acceptance_threshold": self.recognizer.acceptance_threshold,
                 "minimum_margin": self.recognizer.minimum_margin,
                 "calibration_status": self._read_calibration().get("status", "uncalibrated"),

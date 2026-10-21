@@ -10,6 +10,12 @@ import app as web_app
 from PIL import Image
 
 
+def jpeg_bytes(size=(64, 64), color=(200, 120, 40)) -> bytes:
+    buffer = BytesIO()
+    Image.new("RGB", size, color).save(buffer, format="JPEG")
+    return buffer.getvalue()
+
+
 class WebPageTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -35,6 +41,13 @@ class WebPageTests(unittest.TestCase):
         self.addCleanup(self.catalogue_patch.stop)
         self.addCleanup(self.data_patch.stop)
         self.addCleanup(self.settings_patch.stop)
+        self.results_dir = temp_root / "audit_results"
+        self.upload_dir = temp_root / "default_uploads"
+        self.upload_dir.mkdir()
+        for name, value in (("AUDIT_RESULTS_DIR", self.results_dir), ("UPLOAD_DIR", self.upload_dir)):
+            extra_patch = patch.object(web_app, name, value)
+            extra_patch.start()
+            self.addCleanup(extra_patch.stop)
         self.old_reports = web_app._reports.copy()
         web_app._reports.clear()
         self.addCleanup(lambda: (web_app._reports.clear(), web_app._reports.update(self.old_reports)))
@@ -325,7 +338,7 @@ class WebPageTests(unittest.TestCase):
             response = self.client.post(
                 "/analyze",
                 data={
-                    "shelf_image": (io.BytesIO(b"image bytes"), "shelf.jpg"),
+                    "shelf_image": (io.BytesIO(jpeg_bytes()), "shelf.jpg"),
                     "store": "Demo Store",
                     "planogram": "Weekend Planogram",
                     "confidence_threshold": "0.72",
@@ -385,7 +398,7 @@ class WebPageTests(unittest.TestCase):
         with patch.object(web_app, "detect_products", side_effect=RuntimeError("model crashed")):
             response = self.client.post(
                 "/analyze",
-                data={"shelf_image": (io.BytesIO(b"image bytes"), "shelf.jpg")},
+                data={"shelf_image": (io.BytesIO(jpeg_bytes()), "shelf.jpg")},
                 content_type="multipart/form-data",
                 follow_redirects=True,
             )

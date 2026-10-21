@@ -1,30 +1,16 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Run Product Detection</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-  <h1>Run Product Detection</h1>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
-  <form action="{{ url_for('detect') }}" method="post" enctype="multipart/form-data">
-    <label for="shelf_image">Shelf image:</label>
-    <input type="file" name="shelf_image" id="shelf_image" required accept="{{ ','.join(ALLOWED_EXTENSIONS) }}">
-    <br>
-    <label for="confidence_threshold">Confidence ({{ settings.detection_confidence }} default):</label>
-    <input type="number" step="0.01" min="0.1" max="0.95" name="confidence_threshold" id="confidence_threshold" placeholder="{{ settings.detection_confidence }}">
-    <br>
-    <button type="submit">Run Detection</button>
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">DETECTION ONLY <span class="eyebrow-line"></span> NO REPORT SAVED</div><h1>Run Product Detection</h1><p>Run the configured detector on a shelf image to inspect bounding boxes, confidence scores, and inference time. Use <a href="{{ url_for('upload_page') }}">Upload &amp; Analyze</a> for a full, saved planogram audit.</p></div></section>
+<section class="panel settings-card">
+  <p>Model: <b>{{ model.model_file or 'not configured' }}</b>{% if model.loaded %} · loaded · classes: {{ model.class_names|join(', ') }}{% elif model.load_error %} · <span class="flash error">{{ model.load_error }}</span>{% elif model.file_exists %} · loads on first run{% endif %}</p>
+  <form action="{{ url_for('detect') }}" method="post" enctype="multipart/form-data" class="settings-form">
+    <label for="shelf_image">Shelf image (PNG, JPG, WEBP; max 12 MB)
+      <input type="file" name="shelf_image" id="shelf_image" required accept="image/png,image/jpeg,image/webp">
+    </label>
+    <label for="confidence_threshold">Confidence threshold
+      <input type="number" step="0.01" min="0.1" max="0.95" name="confidence_threshold" id="confidence_threshold" value="{{ settings.detection_confidence }}">
+    </label>
+    <div class="settings-savebar"><span>Results are kept only until the server restarts.</span><button type="submit" class="button button-primary">▶ Run Detection</button></div>
   </form>
-  <p><a href="{{ url_for('dashboard') }}">← Back to Dashboard</a></p>
-</body>
-</html>
+</section>
+{% endblock %}

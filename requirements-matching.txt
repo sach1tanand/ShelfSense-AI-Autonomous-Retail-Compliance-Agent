@@ -1,3 +1,6 @@
-# Optional dependencies for real CLIP image-embedding inference:
-torch>=2.1.0
+# Optional dependencies for real CLIP image-embedding inference (crop-to-catalogue SKU candidates).
+# torch comes from requirements.txt. First use downloads openai/clip-vit-base-patch32
+# (~600 MB, MIT licence) from Hugging Face. Candidates stay advisory ("Needs Review") until
+# data/clip_calibration.json is produced from a labelled validation set.
+-r requirements.txt
 transformers>=4.36.0

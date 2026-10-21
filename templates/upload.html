@@ -68,20 +68,28 @@
         </div>
       </div>
 
-      <div class="example-image-wrap">
+      {% if example %}<div class="example-image-wrap">
         <img src="{{ url_for('report_image', report_id='demo-shelf-report') }}" alt="Example shelf image" />
       </div>
 
       <div class="example-meta-row">
         <div class="example-file-icon">▣</div>
         <div class="example-file-copy">
-          <span>sample_shelf.jpg</span>
-          <small>1.2 MB · 1920 x 1080 · JPG</small>
+          <span>{{ example.name }}</span>
+          <small>{{ example.size_kb }} KB · {{ example.width }} x {{ example.height }} · JPG</small>
         </div>
-        <button type="button" class="secondary-button">Use Example</button>
-      </div>
+        <button type="submit" name="use_example" value="1" formnovalidate class="secondary-button">Use Example</button>
+      </div>{% else %}<p class="dashboard-honesty-note">No example image is available in data/samples.</p>{% endif %}
     </article>
   </section>
+
+  {% if test_images %}
+  <section class="panel audit-config-panel">
+    <div class="audit-config-header"><div><div class="panel-kicker">LABELLED TEST SET</div><h2>Synthetic test shelves</h2></div></div>
+    <p class="dashboard-honesty-note">Built from catalogue product images with known ground truth (data/test_set/ground_truth.json). These scenes follow the calibrated layout, so slot mapping is trusted for them. Your audit settings below (store, price check, threshold) still apply.</p>
+    <div class="image-actions">{% for name in test_images %}<button type="submit" name="test_image" value="{{ name }}" formnovalidate class="image-action-button">▶ {{ name }}</button>{% endfor %}</div>
+  </section>
+  {% endif %}
 
   <section class="panel audit-config-panel">
     <div class="audit-config-header">
@@ -136,11 +144,11 @@
             </span>
           </label>
 
-          <label class="check-item checked">
-            <input type="checkbox" name="shelf_gap" checked>
+          <label class="check-item">
+            <input type="checkbox" name="calibrated_layout">
             <span>
-              <strong>Shelf gaps</strong>
-              <small>Identify empty shelf spaces</small>
+              <strong>Calibrated shelf layout</strong>
+              <small>Tick only if the photo is a fixed-camera front view whose rows and slots match the planogram grid. Enables confirmed slot findings (missing, misplaced, empty).</small>
             </span>
           </label>
         </div>
@@ -168,6 +176,13 @@
 </form>
 
 <script>
+  document.querySelector('.upload-page-form')?.addEventListener('submit', event => {
+    const form = event.target;
+    if (form.dataset.submitting) { event.preventDefault(); return; }
+    form.dataset.submitting = '1';
+    setTimeout(() => form.querySelectorAll('button[type=submit]').forEach(button => { button.disabled = true; }), 0);
+    const run = form.querySelector('.run-analysis-btn'); if (run) run.textContent = 'Analyzing…';
+  });
   const imageInput = document.getElementById('shelf_image');
   const previewBox = document.getElementById('selected-preview');
   const previewName = document.getElementById('selected-preview-name');

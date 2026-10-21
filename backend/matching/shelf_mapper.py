@@ -17,10 +17,40 @@ class CoordinateShelfMapper:
     mapping_id = "equal-grid-v1"
     trusted = False
 
-    def __init__(self, boundary_margin: float = 0.06):
+    def __init__(self, boundary_margin: float = 0.06, trusted: bool = False):
         if not 0 <= boundary_margin < 0.5:
             raise ValueError("boundary_margin must be in [0, 0.5)")
         self.boundary_margin = boundary_margin
+        # Only a calibrated deployment should set trusted=True; untrusted mappings stay proposals.
+        self.trusted = trusted
+
+    @staticmethod
+    def cluster_detections_by_row(detections: list[dict[str, Any]], gap_ratio: float = 0.5) -> list[list[dict[str, Any]]]:
+        """Group boxes into shelf rows by vertical centre, top-to-bottom, each row left-to-right.
+
+        A new row starts when the centre-y gap exceeds gap_ratio x the median box height.
+        """
+        boxed = []
+        for detection in detections:
+            try:
+                x1, y1, x2, y2 = [float(value) for value in detection.get("box")]
+            except (TypeError, ValueError):
+                continue
+            if x2 > x1 and y2 > y1:
+                boxed.append(((y1 + y2) / 2, (x1 + x2) / 2, y2 - y1, detection))
+        if not boxed:
+            return []
+        heights = sorted(item[2] for item in boxed)
+        threshold = heights[len(heights) // 2] * gap_ratio
+        boxed.sort(key=lambda item: item[0])
+        rows: list[list[tuple]] = [[boxed[0]]]
+        for item in boxed[1:]:
+            row_center = sum(member[0] for member in rows[-1]) / len(rows[-1])
+            if item[0] - row_center > threshold:
+                rows.append([item])
+            else:
+                rows[-1].append(item)
+        return [[member[3] for member in sorted(row, key=lambda member: member[1])] for row in rows]
 
     def map_detection(self, detection: dict[str, Any], planogram: list[dict[str, Any]]) -> dict[str, Any]:
         box = detection.get("box")

@@ -312,6 +312,8 @@ class ProductMatchingTests(unittest.TestCase):
         )
 
         with patch.object(web_app, "DATA_DIR", self.root), \
+             patch.object(web_app, "AUDIT_RESULTS_DIR", self.root / "audit_results"), \
+             patch.object(web_app, "UPLOAD_DIR", self.root), \
              patch.object(web_app, "CATALOGUE_PATH", self.root / "catalogue.csv"), \
              patch.object(web_app, "_get_matching_pipeline", return_value=pipeline), \
              patch.object(web_app, "detect_products", return_value=[{"label": "red product", "confidence": 0.95, "box": [5, 5, 45, 45], "image_width": 100, "image_height": 100}]):

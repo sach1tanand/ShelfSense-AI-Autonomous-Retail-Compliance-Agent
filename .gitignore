@@ -22,3 +22,9 @@ htmlcov/
 # Generated model output files (excluding the tracked external checkpoint)
 models/*.pt
 !models/external/sku110k-yolov8n.pt
+
+# Runtime audit reports (generated per analysis)
+data/audit_results/*.json
+
+# Downloaded/derived runtime files
+*.tmp
