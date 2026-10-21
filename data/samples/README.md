@@ -1,3 +1,3 @@
 # Sample images
 
-Place authorized shelf photos in this folder for local experimentation. Image upload analysis requires a compatible model configured with `SHELFSENSE_MODEL`; no sample photos or model weights are distributed with this starter.
+Place authorized shelf photos in this folder for local experimentation. `real_supermarket_shelf.jpg` is used by the "Use Example" button and the real-detector test. `annotated_shelf_sku110k.jpg` is an earlier baseline output.

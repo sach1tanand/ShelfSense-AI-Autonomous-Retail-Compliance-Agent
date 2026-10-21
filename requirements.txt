@@ -1,4 +1,14 @@
 Flask>=3.0,<4.0
 requests>=2.31,<3.0
 Pillow>=10,<13
-# Optional for real image inference: install ultralytics and configure SHELFSENSE_MODEL.
+numpy>=1.26
+# Image inference (temporary SKU-110K YOLOv8n detector, or your own weights via SHELFSENSE_MODEL).
+# torch is pinned to 2.5.1 CPU: newer torch DLLs were blocked by Windows Smart App Control on the
+# development machine. The CPU index lets pip pick the "+cpu" build.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
+torchvision==0.20.1
+ultralytics>=8.3,<9
+# Price-tag OCR (PP-OCR models bundled, ONNX Runtime; Apache-2.0)
+rapidocr_onnxruntime>=1.4,<2
+pytest>=8

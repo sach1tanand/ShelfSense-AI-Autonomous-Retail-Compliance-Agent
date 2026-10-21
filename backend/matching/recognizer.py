@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image
 
 from .catalog import CatalogueEmbeddingCache, load_catalogue_references
-from .encoder import ClipEncoderUnavailable, ImageEncoder, TransformersClipEncoder
+from .encoder import ClipEncoderUnavailable, ImageEncoder, create_encoder
 
 
 class MatchingUnavailable(RuntimeError):
@@ -83,7 +83,7 @@ class ProductRecognizer:
     def _get_encoder(self) -> ImageEncoder:
         if self.encoder is None:
             try:
-                self.encoder = TransformersClipEncoder(self.model_id)
+                self.encoder = create_encoder(self.model_id)
             except ClipEncoderUnavailable as error:
                 raise MatchingUnavailable(str(error)) from error
         return self.encoder
