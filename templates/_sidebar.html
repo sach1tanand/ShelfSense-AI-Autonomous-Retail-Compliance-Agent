@@ -1,0 +1,12 @@
+<aside class="sidebar">
+  <a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-icon">🛒</span><span>ShelfSense AI<small>Autonomous Retail Compliance Agent</small></span></a>
+  <nav class="side-nav" aria-label="Main navigation">
+    <a class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}"><span>⌂</span>Dashboard</a>
+    <a class="nav-item {{ 'active' if active_page == 'upload' else '' }}" href="{{ url_for('upload_page') }}"><span>↥</span>Upload &amp; Analyze</a>
+    <a class="nav-item {{ 'active' if active_page == 'planogram' else '' }}" href="{{ url_for('planogram_page') }}"><span>▦</span>Planogram</a>
+    <a class="nav-item {{ 'active' if active_page == 'catalogue' else '' }}" href="{{ url_for('catalogue_page') }}"><span>▣</span>Product Catalogue</a>
+    <a class="nav-item {{ 'active' if active_page == 'reports' else '' }}" href="{{ url_for('reports_page') }}"><span>▤</span>Reports</a>
+    <a class="nav-item {{ 'active' if active_page == 'settings' else '' }}" href="{{ url_for('settings_page') }}"><span>⚙</span>Settings</a>
+  </nav>
+  <div class="sidebar-bottom"><span class="avatar">RS</span><span><b>ShelfSense AI</b><small>Smarter Shelves<br>Better Stores</small></span></div>
+</aside>

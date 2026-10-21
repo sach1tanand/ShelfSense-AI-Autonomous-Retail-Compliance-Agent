@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="reports-heading">
+  <div>
+    <h1>Reports</h1>
+    <p>Analyze historical audits and store performance</p>
+  </div>
+  <div class="reports-heading-actions">
+    <label class="report-select report-date-select"><span>▦</span><select aria-label="Date range"><option>1 Oct 2025 - 22 Oct 2025</option><option>All time</option></select></label>
+    <label class="report-select"><select id="reports-store-filter" aria-label="Filter by store"><option value="">All Stores</option>{% for store in store_summaries %}<option value="{{ store.store }}">{{ store.store }}</option>{% endfor %}</select></label>
+    <a class="button-primary report-download" href="{{ url_for('download_reports') }}">↓ &nbsp; Download Report</a>
+  </div>
+</section>
+
+<nav class="report-tabs" aria-label="Report views">
+  <button class="active" type="button" data-report-tab="overview">▥ &nbsp; Overview</button>
+  <button type="button" data-report-tab="comparison">▦ &nbsp; Store Comparison</button>
+  <button type="button" data-report-tab="issues">⚠ &nbsp; Issue Analysis</button>
+</nav>
+
+<section id="report-overview" class="report-tab-panel reports-overview">
+  <div class="reports-chart-grid">
+    <article class="panel analytics-card trend-card">
+      <div class="analytics-title"><h2>Compliance Trend <span class="info-icon" title="Compliance for saved audits">i</span></h2><select aria-label="Trend metric"><option>Compliance %</option></select></div>
+      {% if trend_reports %}
+      {% set chart_reports = trend_reports[:10]|reverse|list %}
+      {% set trend_points = namespace(points='') %}
+      {% for report_id, report in chart_reports %}{% set px = 35 + loop.index0 * (490 / ([chart_reports|length - 1, 1]|max)) %}{% set py = 172 - report.compliance_rate * 1.42 %}{% set trend_points.points = trend_points.points ~ px ~ ',' ~ py ~ ' ' %}{% endfor %}
+      <div class="line-chart-wrap"><div class="chart-y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><svg class="line-chart" viewBox="0 0 540 190" role="img" aria-label="Compliance trend by audit"><g class="chart-grid-lines"><line x1="30" y1="20" x2="530" y2="20"/><line x1="30" y1="56" x2="530" y2="56"/><line x1="30" y1="92" x2="530" y2="92"/><line x1="30" y1="128" x2="530" y2="128"/><line x1="30" y1="164" x2="530" y2="164"/></g><polygon class="trend-area" points="{{ trend_points.points }}530,164 30,164"/><polyline class="trend-line" points="{{ trend_points.points }}"/>{% for report_id, report in chart_reports %}{% set px = 35 + loop.index0 * (490 / ([chart_reports|length - 1, 1]|max)) %}{% set py = 172 - report.compliance_rate * 1.42 %}<circle class="trend-point" cx="{{ px }}" cy="{{ py }}" r="3.5"><title>{{ report.created_at }} — {{ report.compliance_rate }}%</title></circle>{% endfor %}</svg></div>
+      <div class="chart-x-labels">{% for report_id, report in chart_reports %}<span>{{ report.created_at[:6] }}</span>{% endfor %}</div>
+      <div class="chart-legend"><span><i class="legend-blue"></i>Saved audit compliance</span></div>
+      {% else %}<div class="analytics-empty">No confirmed slot compliance trend is available. Configure a trusted slot mapper to confirm slot-level results.</div>{% endif %}
+    </article>
+
+    <article class="panel analytics-card store-performance-card">
+      <div class="analytics-title"><h2>Store-wise Performance</h2><select aria-label="Store metric"><option>Compliance %</option></select></div>
+      {% for store in store_summaries %}<div class="store-performance-row"><span>{{ store.store }}</span><div class="horizontal-track"><i style="width:{{ store.compliance_rate or 0 }}%"></i></div><b>{{ (store.compliance_rate|string ~ '%') if store.compliance_rate is not none else 'Needs Review' }}</b></div>{% else %}<div class="analytics-empty">Store comparison appears after audits.</div>{% endfor %}
+    </article>
+
+    <article class="panel analytics-card issue-trends-card">
+      <div class="analytics-title"><h2>Issue Trends <span class="info-icon" title="Issue categories in saved audits">i</span></h2><select aria-label="Issue metric"><option>Issue Count</option></select></div>
+      {% if issue_trends %}<div class="issue-bars"><div class="issue-axis"><span>Findings</span><span></span><span></span><span>0</span></div><div class="issue-bars-area">{% for trend in issue_trends %}{% set issue_bar_total = trend['Missing'] + trend['Misplaced'] + trend['Unexpected Product'] + trend['Needs Review'] + trend['Price mismatch'] %}<div class="issue-bar-column"><div class="issue-bar" style="height:{{ issue_bar_total / issue_trend_max * 100 }}%"><i class="issue-missing" style="height:{{ trend['Missing'] / issue_bar_total * 100 if issue_bar_total else 0 }}%"></i><i class="issue-understocked" style="height:{{ trend['Misplaced'] / issue_bar_total * 100 if issue_bar_total else 0 }}%"></i><i class="issue-overstocked" style="height:{{ trend['Unexpected Product'] / issue_bar_total * 100 if issue_bar_total else 0 }}%"></i><i class="issue-price-mismatch" style="height:{{ trend['Needs Review'] / issue_bar_total * 100 if issue_bar_total else 0 }}%"></i><i class="issue-needs-review" style="height:{{ trend['Price mismatch'] / issue_bar_total * 100 if issue_bar_total else 0 }}%"></i></div><small>{{ trend.label }}</small></div>{% endfor %}</div></div><div class="chart-legend issue-legend"><span><i class="legend-red"></i>Missing</span><span><i class="legend-yellow"></i>Misplaced</span><span><i class="legend-blue"></i>Unexpected</span><span><i class="legend-purple"></i>Needs Review / Price</span></div>{% else %}<div class="analytics-empty">No placement issues recorded yet.</div>{% endif %}
+    </article>
+
+    <article class="panel analytics-card category-card">
+      <div class="analytics-title"><h2>Category-wise Compliance</h2><select aria-label="Category store filter"><option>All Stores</option></select></div>
+      {% if category_summaries %}<div class="category-chart"><div class="category-y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div class="category-bars">{% for category in category_summaries %}<div class="category-bar-column"><b>{{ category.compliance_rate }}%</b><i style="height:{{ category.compliance_rate }}%"></i><small>{{ category.category }}</small></div>{% endfor %}</div></div>{% else %}<div class="analytics-empty">Category results appear after audits.</div>{% endif %}
+    </article>
+
+    <article class="panel analytics-card top-products-card">
+      <div class="analytics-title"><h2>Top Issue Products</h2><select aria-label="Issue product sort"><option>By Issue Count</option></select></div>
+      {% set max_product_issues = top_issue_products|map(attribute='issues')|max if top_issue_products else 1 %}
+      {% for item in top_issue_products %}<div class="issue-product-row"><span class="product-thumb">{{ item.product[:1]|upper }}</span><span class="issue-product-name">{{ item.product }}</span><div class="horizontal-track issue-track"><i style="width:{{ item.issues / max_product_issues * 100 }}%"></i></div><b>{{ item.issues }}</b></div>{% else %}<div class="analytics-empty">No issue products to show.</div>{% endfor %}
+    </article>
+
+    <article class="panel analytics-card price-analysis-card">
+      <div class="analytics-title"><h2>Price Mismatch Analysis</h2><select aria-label="Price analysis grouping"><option>By Store</option></select></div>
+      {% if price_store_summaries %}{% set max_price_issues = price_store_summaries|map(attribute='mismatches')|max %}<div class="price-chart">{% for store in price_store_summaries %}<div class="price-bar-column"><b>{{ store.mismatches }}</b><i style="height:{{ store.mismatches / max_price_issues * 100 }}%"></i><small>{{ store.store }}</small></div>{% endfor %}</div>{% else %}<div class="analytics-empty">Price mismatches appear when price verification is connected.</div>{% endif %}
+    </article>
+  </div>
+
+  <section class="panel report-history analytics-history">
+    <div class="history-toolbar"><h2>Audit History</h2><div class="history-filters"><label class="search-box history-search"><span>⌕</span><input id="audit-search" type="search" placeholder="Search by store, date, or file name..."></label><select id="store-filter" aria-label="Filter by store"><option value="">All Stores</option>{% for store in store_summaries %}<option value="{{ store.store }}">{{ store.store }}</option>{% endfor %}</select><select id="status-filter" aria-label="Filter by status"><option value="">All Status</option><option value="issues">Issues Found</option><option value="clear">All Clear</option></select><select id="sort-filter" aria-label="Sort reports"><option value="newest">Newest First</option><option value="oldest">Oldest First</option></select></div></div>
+    <div class="table-wrap"><table id="audit-table"><thead><tr><th>#</th><th>DATE &amp; TIME</th><th>STORE</th><th>PLANOGRAM</th><th>PRODUCTS DETECTED</th><th>COMPLIANCE %</th><th>ISSUES FOUND</th><th>STATUS</th><th>REPORT</th><th></th></tr></thead><tbody>{% for report_id, report in reports %}{% set row_issues = report.compliance|selectattr('status', 'in', ['Misplaced','Missing Expected Product','Unexpected Product'])|list|length %}{% set review_count = report.compliance|selectattr('status', 'equalto', 'Needs Review')|list|length %}<tr data-order="{{ loop.index }}" data-search="{{ (report.image_name ~ ' ' ~ report.get('store_name', 'Local Store') ~ ' ' ~ report.created_at)|lower }}" data-store="{{ report.get('store_name', 'Local Store') }}" data-outcome="{{ 'issues' if row_issues else ('review' if review_count else 'clear') }}"><td>{{ loop.index }}</td><td>{{ report.created_at|replace('Date: ', '') }}</td><td>{{ report.get('store_name', 'Local Store') }}</td><td>{{ report.get('planogram_name', 'Current planogram') }}</td><td>{{ report.detection_count }}</td><td><span class="compliance-meter"><b>{{ (report.compliance_rate|string ~ '%') if report.compliance_rate is not none else 'Needs Review' }}</b><i><span style="width:{{ report.compliance_rate or 0 }}%"></span></i></span></td><td class="issue-count-cell">{{ row_issues }}</td><td><span class="completed-pill">{{ 'Completed' if not review_count else 'Needs Review' }}</span></td><td><a class="download-row" href="{{ url_for('report_detail', report_id=report_id) }}">↓ &nbsp;Open</a></td><td><a class="row-menu" href="{{ url_for('report_detail', report_id=report_id) }}" aria-label="Open report">⋮</a></td></tr>{% else %}<tr><td colspan="10" class="empty-cell">No saved audits yet. Upload a shelf image to create your first report.</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+</section>
+
+<section id="report-comparison" class="panel table-panel report-tab-panel reports-secondary-panel" hidden>
+  <div class="secondary-heading"><div><span class="panel-kicker">STORE-WISE PERFORMANCE</span><h2>Store Comparison</h2></div><span class="shelf-tag">{{ store_summaries|length }} stores</span></div>
+  <div class="store-compare-grid">{% for store in store_summaries %}<article class="store-compare-card"><div><h3>{{ store.store }}</h3><strong>{{ (store.compliance_rate|string ~ '%') if store.compliance_rate is not none else 'Needs Review' }}</strong></div><div class="horizontal-track"><i style="width:{{ store.compliance_rate or 0 }}%"></i></div><p>{{ store.audits }} audits · {{ store.placements }} confirmed placements · {{ store.issues }} confirmed issues</p></article>{% else %}<div class="analytics-empty">Store comparisons appear after completed audits.</div>{% endfor %}</div>
+  <div class="table-wrap"><table><thead><tr><th>STORE</th><th>AUDITS</th><th>CONFIRMED PLACEMENTS</th><th>COMPLIANCE</th><th>ISSUES</th></tr></thead><tbody>{% for store in store_summaries %}<tr><td>{{ store.store }}</td><td>{{ store.audits }}</td><td>{{ store.placements }}</td><td><span class="compliance-meter"><b>{{ (store.compliance_rate|string ~ '%') if store.compliance_rate is not none else 'Needs Review' }}</b><i><span style="width:{{ store.compliance_rate or 0 }}%"></span></i></span></td><td>{{ store.issues }}</td></tr>{% else %}<tr><td colspan="5" class="empty-cell">No store data available yet.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section id="report-issues" class="report-tab-panel reports-secondary-panel" hidden>
+  <div class="issue-analysis-grid">
+    <article class="panel analytics-card"><div class="analytics-title"><h2>Issue Analysis</h2><span class="panel-kicker">PLACEMENT STATUS</span></div>{% for status, count in issue_type_counts.items() %}<div class="issue-breakdown-row"><span>{{ status }}</span><div class="horizontal-track"><i style="width:{{ (count / (issue_type_counts.values()|sum) * 100) if issue_type_counts.values()|sum else 0 }}%"></i></div><b>{{ count }}</b></div>{% endfor %}</article>
+    <article class="panel analytics-card"><div class="analytics-title"><h2>Price Mismatch Summary</h2><span class="stat-icon amber">＄</span></div><div class="price-mismatch-total">{{ mismatch_count }}<small>mismatches</small></div><p>Price checks are based on verified OCR values. Unverified prices are excluded from this total.</p></article>
+  </div>
+  <article class="panel table-panel issue-products-table"><div class="secondary-heading"><div><span class="panel-kicker">REQUIRING ATTENTION</span><h2>Products with the most issues</h2></div></div><div class="table-wrap"><table><thead><tr><th>PRODUCT</th><th>ISSUES</th></tr></thead><tbody>{% for item in top_issue_products %}<tr><td>{{ item.product }}</td><td>{{ item.issues }}</td></tr>{% else %}<tr><td colspan="2" class="empty-cell">No issue products in saved audits.</td></tr>{% endfor %}</tbody></table></div></article>
+</section>
+
+<script>
+const reportTabs = [...document.querySelectorAll('[data-report-tab]')];
+reportTabs.forEach(button => button.addEventListener('click', () => {
+  reportTabs.forEach(tab => tab.classList.toggle('active', tab === button));
+  document.querySelectorAll('.report-tab-panel').forEach(panel => panel.hidden = true);
+  document.getElementById(`report-${button.dataset.reportTab}`).hidden = false;
+}));
+function filterAudits() {
+  const term = document.getElementById('audit-search').value.toLowerCase();
+  const store = document.getElementById('store-filter').value;
+  const outcome = document.getElementById('status-filter').value;
+  const rows = [...document.querySelectorAll('#audit-table tbody tr[data-search]')];
+  rows.forEach(row => row.hidden = !(row.dataset.search.includes(term) && (!store || row.dataset.store === store) && (!outcome || row.dataset.outcome === outcome)));
+  rows.sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order));
+  if (document.getElementById('sort-filter').value === 'oldest') rows.reverse();
+  rows.forEach(row => row.parentElement.appendChild(row));
+}
+document.getElementById('reports-store-filter').addEventListener('change', event => {
+  document.getElementById('store-filter').value = event.target.value;
+  filterAudits();
+});
+['audit-search', 'store-filter', 'status-filter', 'sort-filter'].forEach(id => document.getElementById(id).addEventListener('input', filterAudits));
+</script>
+{% endblock %}

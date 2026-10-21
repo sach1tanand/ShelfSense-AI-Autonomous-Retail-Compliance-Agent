@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shelf Audit Result — ShelfSense AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=20261024">
+  <link rel="stylesheet" href="/static/dashboard.css?v=20261024">
+</head>
+<body class="workspace-page audit-dashboard">
+  <aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">🛒</span><span>ShelfSense AI<small>Autonomous Retail Compliance Agent</small></span></a>
+  <nav class="side-nav" aria-label="Main navigation">
+    <a class="nav-item active" href="/"><span>⌂</span>Dashboard</a>
+    <a class="nav-item " href="/upload"><span>↥</span>Upload &amp; Analyze</a>
+    <a class="nav-item " href="/planogram"><span>▦</span>Planogram</a>
+    <a class="nav-item " href="/catalogue"><span>▣</span>Product Catalogue</a>
+    <a class="nav-item " href="/reports"><span>▤</span>Reports</a>
+    <a class="nav-item " href="/settings"><span>⚙</span>Settings</a>
+  </nav>
+  <div class="sidebar-bottom"><span class="avatar">RS</span><span><b>ShelfSense AI</b><small>Smarter Shelves<br>Better Stores</small></span></div>
+</aside>
+  <main class="main-content">
+    <header class="topbar"><div><span class="breadcrumb">Workspace</span><span class="crumb-sep">/</span><b>Dashboard</b></div><div class="top-actions"><span class="live-dot"></span> Shelf compliance workspace</div></header>
+    
+    <section class="audit-heading"><div><div class="eyebrow">STORE WORKSPACE <span class="eyebrow-line"></span> READY FOR YOUR FIRST SCAN</div><h1>Shelf Audit Dashboard<span class="analysis-badge">● Awaiting Analysis</span></h1><p>Upload a shelf image to see real detections, placement checks, and price verification here.</p></div><div class="audit-heading-actions"><a class="button button-primary" href="/upload">＋ New Analysis</a>
+    <a class="button button-primary" href="/detect_page">▶ Run Product Detection</a><a class="button button-quiet" href="/reports/download">⇩ Download Report</a></div></section>
+    
+    
+    
+    
+    <section class="audit-kpis">
+      <article class="audit-kpi kpi-green"><span class="kpi-icon">✓</span><div><b>—</b><span>Overall Compliance</span></div></article>
+      <article class="audit-kpi kpi-blue"><span class="kpi-icon">⬡</span><div><b>—</b><span>Products Detected</span></div></article>
+      <article class="audit-kpi kpi-red"><span class="kpi-icon">⚠</span><div><b>—</b><span>Issues Found</span></div></article>
+      <article class="audit-kpi kpi-amber"><span class="kpi-icon">◇</span><div><b>—</b><span>Price Mismatches</span></div></article>
+      <article class="audit-kpi kpi-purple"><span class="kpi-icon">⬡</span><div><b>—</b><span>Slots Needing Review</span></div></article>
+    </section>
+    <section class="audit-main-grid">
+      <article class="panel detected-image-panel"><div class="audit-card-title"><div><h2>Detected Shelf Image</h2><span class="info-dot" title="Boxes are drawn only when the configured detector returns bounding boxes.">i</span></div></div>
+        <div class="shelf-empty-state model-unavailable-state"><span class="empty-shelf-icon">◇</span><b>Detection model is not configured</b><span>A real detected image will appear here after a trained model is configured and a shelf scan completes.</span><a class="button button-quiet" href="/settings#model">View model setup →</a></div>
+        <div class="image-actions"><button type="button" class="image-action-button active" id="toggle-detections">Show Detections</button><a class="image-action-button" href="/planogram">Show Planogram</a><button type="button" class="image-action-button" id="show-issues">Show Issues Only</button></div>
+        <div class="detection-legend"><span><i class="legend-product"></i>Product</span><span><i class="legend-price"></i>Price Tag</span><span><i class="legend-misplaced"></i>Placement Issue</span><span><i class="legend-empty"></i>Empty Shelf</span><span><i class="legend-edge"></i>Shelf Edge</span></div>
+        
+      </article>
+      <div class="audit-right-column">
+        <article class="panel compliance-summary"><div class="audit-card-title"><h2>Compliance Summary</h2></div><div class="summary-empty"><span class="compliance-donut empty-donut"><div><b>—</b><span>No scan</span></div></span><p>Run a shelf scan to calculate placement compliance.</p></div></article>
+        <article class="panel detected-issues" id="issues-panel"><div class="audit-card-title"><h2>Detected Issues</h2><select id="issue-filter" aria-label="Filter detected issues"><option value="all">All Issues</option><option value="placement">Placement</option><option value="price">Price</option></select></div>
+          <div class="issue-list"><div class="issue-empty"><b>Issues will appear after analysis</b><span>We show findings from the latest completed scan.</span></div></div>
+        </article>
+      </div>
+    </section>
+    <section class="audit-bottom-grid">
+      <article class="panel audit-mini-panel"><div class="audit-card-title"><h2>Expected Planogram (Row 1)</h2><a href="/planogram">View all →</a></div><div class="mini-product-strip"><div class="mini-product"><span class="mini-pack mark-0">P</span><b>Perly</b><small>Slot 1 · 3 facings</small></div><div class="mini-product"><span class="mini-pack mark-1">P</span><b>PHALHARI CHIWDA</b><small>Slot 2 · 3 facings</small></div><div class="mini-product"><span class="mini-pack mark-2">C</span><b>Classic Malt</b><small>Slot 3 · 3 facings</small></div><div class="mini-product"><span class="mini-pack mark-3">K</span><b>Kellogg’s Millet Muesli</b><small>Slot 4 · 2 facings</small></div><div class="mini-product"><span class="mini-pack mark-0"></span><b></b><small>Slot 5 · 3 facings</small></div></div></article>
+      <article class="panel audit-mini-panel"><div class="audit-card-title"><h2>Detected Products</h2><span class="muted-caption">0 found</span></div><div class="mini-empty">Run a scan to list detected products.</div></article>
+      <article class="panel audit-mini-panel price-panel"><div class="audit-card-title"><h2>Price Verification</h2><span class="muted-caption">OCR status</span></div><div class="table-wrap"><table><thead><tr><th>PRODUCT</th><th>DETECTED</th><th>EXPECTED</th><th>STATUS</th></tr></thead><tbody><tr><td>Perly</td><td>—</td><td>—</td><td><span class="price-status unverified">Not scanned</span></td></tr><tr><td>PHALHARI CHIWDA</td><td>—</td><td>—</td><td><span class="price-status unverified">Not scanned</span></td></tr><tr><td>Classic Malt</td><td>—</td><td>—</td><td><span class="price-status unverified">Not scanned</span></td></tr><tr><td>Kellogg’s Millet Muesli</td><td>—</td><td>—</td><td><span class="price-status unverified">Not scanned</span></td></tr><tr><td></td><td>—</td><td>—</td><td><span class="price-status unverified">Not scanned</span></td></tr></tbody></table></div><p class="dashboard-honesty-note">No scan or price OCR data yet. Expected prices are catalogue values where provided.</p></article>
+    </section>
+    <footer class="footer"><span>© 2026 ShelfSense AI</span><span>Smarter shelves, better shopping <span class="footer-star">✳</span></span></footer>
+  </main>
+  <script>
+    const detectionButton=document.getElementById('toggle-detections');detectionButton?.addEventListener('click',()=>{const image=document.querySelector('.shelf-photo');if(!image)return;image.classList.toggle('hide-detections');detectionButton.classList.toggle('active');});
+    document.getElementById('show-issues')?.addEventListener('click',()=>document.getElementById('issues-panel').scrollIntoView({behavior:'smooth',block:'center'}));
+    document.getElementById('issue-filter')?.addEventListener('change',event=>document.querySelectorAll('.issue-row').forEach(row=>row.hidden=event.target.value!=='all'&&row.dataset.issueType!==event.target.value));
+  </script>
+</body>
+</html>

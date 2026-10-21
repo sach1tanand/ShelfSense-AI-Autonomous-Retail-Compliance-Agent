@@ -1,0 +1,24 @@
+# Python bytecode caches
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Environment variable files
+.env
+
+# Uploaded files (runtime data)
+uploads/
+
+# Log files
+*.log
+
+# Test caches and coverage reports
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Generated model output files (excluding the tracked external checkpoint)
+models/*.pt
+!models/external/sku110k-yolov8n.pt

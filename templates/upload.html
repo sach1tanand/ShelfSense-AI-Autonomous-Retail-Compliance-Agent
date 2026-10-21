@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-heading upload-page-heading">
+  <div>
+    <h1>Upload &amp; Analyze</h1>
+    <p>Start a new shelf compliance audit</p>
+  </div>
+</section>
+
+<div class="upload-stepper" aria-label="Upload steps">
+  <div class="upload-step current">
+    <span class="upload-step-number">1</span>
+    <div class="upload-step-copy">
+      <strong>Upload image</strong>
+      <small>Add shelf image</small>
+    </div>
+  </div>
+  <div class="upload-step-connector"></div>
+  <div class="upload-step">
+    <span class="upload-step-number">2</span>
+    <div class="upload-step-copy">
+      <strong>Configure audit</strong>
+      <small>Select store, planogram and checks</small>
+    </div>
+  </div>
+  <div class="upload-step-connector"></div>
+  <div class="upload-step">
+    <span class="upload-step-number">3</span>
+    <div class="upload-step-copy">
+      <strong>Analyze</strong>
+      <small>Run AI analysis and view results</small>
+    </div>
+  </div>
+</div>
+
+<form action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data" class="upload-page-form">
+  <section class="upload-board">
+    <article class="panel upload-panel">
+      <div class="panel-heading compact">
+        <div>
+          <div class="panel-kicker">STEP 1</div>
+          <h2>Upload Shelf Image</h2>
+        </div>
+      </div>
+
+      <label class="upload-dropzone" for="shelf_image">
+        <span class="large-upload-icon">⇪</span>
+        <strong id="upload-title">Upload shelf image</strong>
+        <span>Drag and drop an image here, or click to browse</span>
+        <small>Supported formats: JPG, PNG, JPEG</small>
+        <input id="shelf_image" name="shelf_image" type="file" accept="image/png,image/jpeg,image/webp" required>
+      </label>
+
+      <div id="selected-preview" class="selected-preview" hidden>
+        <span class="preview-file-icon">▣</span>
+        <div>
+          <b id="selected-preview-name">No file selected</b>
+          <small id="selected-preview-meta">Ready to upload</small>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel example-panel">
+      <div class="panel-heading compact">
+        <div>
+          <div class="panel-kicker">EXAMPLE SHELF</div>
+          <h2>Example Shelf Image</h2>
+        </div>
+      </div>
+
+      <div class="example-image-wrap">
+        <img src="{{ url_for('report_image', report_id='demo-shelf-report') }}" alt="Example shelf image" />
+      </div>
+
+      <div class="example-meta-row">
+        <div class="example-file-icon">▣</div>
+        <div class="example-file-copy">
+          <span>sample_shelf.jpg</span>
+          <small>1.2 MB · 1920 x 1080 · JPG</small>
+        </div>
+        <button type="button" class="secondary-button">Use Example</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel audit-config-panel">
+    <div class="audit-config-header">
+      <div>
+        <div class="panel-kicker">STEP 2</div>
+        <h2>Audit Configuration</h2>
+      </div>
+    </div>
+
+    <div class="audit-config-grid">
+      <label>
+        <span>Store</span>
+        <select name="store">
+          <option>{{ settings.default_store }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Select Planogram</span>
+        <select name="planogram">
+          <option>{{ settings.default_planogram }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Product Catalogue</span>
+        <select name="catalogue">
+          <option>{{ settings.default_catalogue }}</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="audit-options-grid">
+      <div class="audit-checks-panel">
+        <h3>Audit Checks</h3>
+        <p>Select the checks to perform in this analysis</p>
+
+        <div class="check-items">
+          <label class="check-item checked">
+            <input type="checkbox" checked disabled>
+            <span>
+              <strong>Product placement</strong>
+              <small>Detect misplaced and missing products</small>
+            </span>
+          </label>
+
+          <label class="check-item checked">
+            <input type="checkbox" name="price_check" checked>
+            <span>
+              <strong>Price label verification</strong>
+              <small>Read and verify price tags using OCR</small>
+            </span>
+          </label>
+
+          <label class="check-item checked">
+            <input type="checkbox" name="shelf_gap" checked>
+            <span>
+              <strong>Shelf gaps</strong>
+              <small>Identify empty shelf spaces</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="audit-threshold-panel">
+        <h3>Confidence Threshold</h3>
+        <p>Minimum confidence for detections</p>
+        <div class="threshold-block">
+          <span id="confidence-value">{{ '%.2f'|format(settings.detection_confidence if settings is defined else 0.35) }}</span>
+        </div>
+        <input type="range" name="confidence_threshold" min="0.20" max="0.95" step="0.01" value="{{ settings.detection_confidence if settings is defined else 0.35 }}" oninput="document.getElementById('confidence-value').textContent=Number(this.value).toFixed(2)">
+        <div class="threshold-scale"><span>0.20</span><span>0.95</span></div>
+      </div>
+    </div>
+
+    <div class="upload-submit-row">
+      <div class="upload-note">
+        <span class="info-icon">i</span>
+        <span>Use a clear, front-facing shelf image for best results.</span>
+      </div>
+      <button type="submit" class="button button-primary run-analysis-btn">▶ Run Shelf Analysis</button>
+    </div>
+  </section>
+</form>
+
+<script>
+  const imageInput = document.getElementById('shelf_image');
+  const previewBox = document.getElementById('selected-preview');
+  const previewName = document.getElementById('selected-preview-name');
+  const previewMeta = document.getElementById('selected-preview-meta');
+
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files && imageInput.files[0];
+    if (!file) return;
+    previewName.textContent = file.name;
+    previewMeta.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB · ${file.type || 'Image'}`;
+    previewBox.hidden = false;
+  });
+</script>
+{% endblock %}

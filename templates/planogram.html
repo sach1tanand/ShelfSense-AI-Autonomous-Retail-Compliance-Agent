@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="planogram-topbar">
+  <div class="page-heading planogram-heading">
+    <div>
+      <h1>Planogram</h1>
+      <p>Define and manage expected shelf layout</p>
+    </div>
+  </div>
+
+  <div class="planogram-controls">
+    <div class="compact-select">
+      <label>Store</label>
+      <select>
+        <option selected>Demo Store</option>
+      </select>
+    </div>
+    <div class="compact-select">
+      <label>Planogram</label>
+      <select>
+        <option selected>Snacks Planogram (v1)</option>
+      </select>
+    </div>
+    <button class="button-primary planogram-primary" type="button">+ Create New Planogram</button>
+  </div>
+</section>
+
+<section class="stats-grid planogram-stats">
+  <article class="stat-card planogram-stat-card light-blue">
+    <div class="stat-top"><span>Shelf Rows</span><span class="stat-icon blue">▦</span></div>
+    <div class="stat-value">{{ shelf_rows|length }}</div>
+    <div class="stat-foot">Configured</div>
+  </article>
+
+  <article class="stat-card planogram-stat-card lavender">
+    <div class="stat-top"><span>Total Slots</span><span class="stat-icon lilac">◇</span></div>
+    <div class="stat-value">{{ total_slots }}</div>
+    <div class="stat-foot">Across all shelves</div>
+  </article>
+
+  <article class="stat-card planogram-stat-card green">
+    <div class="stat-top"><span>Products Assigned</span><span class="stat-icon mint">✓</span></div>
+    <div class="stat-value">{{ assigned_slots }}</div>
+    <div class="stat-foot">{{ ((assigned_slots / total_slots * 100)|round|int) if total_slots else 0 }}% filled</div>
+  </article>
+
+  <article class="stat-card planogram-stat-card amber">
+    <div class="stat-top"><span>Empty Slots</span><span class="stat-icon amber">◫</span></div>
+    <div class="stat-value">{{ empty_slots }}</div>
+    <div class="stat-foot">{{ ((empty_slots / total_slots * 100)|round|int) if total_slots else 0 }}% empty</div>
+  </article>
+</section>
+
+{% if planogram_errors %}<div class="flash error planogram-validation-errors"><b>Planogram needs correction</b><ul>{% for error in planogram_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+
+<section class="planogram-main">
+  <div class="planogram-layout-panel panel">
+    <div class="planogram-layout-header">
+      <h2>Expected Planogram Layout</h2>
+      <div class="view-toggle">
+        <button class="active" type="button">Grid View</button>
+        <button type="button">Table View</button>
+      </div>
+    </div>
+
+    <div class="planogram-shelf-grid">
+      {% for shelf, slots in shelf_rows.items() %}
+      <div class="planogram-shelf-row">
+        <div class="shelf-label-card">
+          <span class="shelf-row-name">{{ shelf }}</span>
+          <small>{{ ['Row 1','Row 2','Row 3'][loop.index0] if loop.index0 < 3 else 'Row ' ~ loop.index }}</small>
+        </div>
+
+        <div class="planogram-slot-grid">
+          {% for slot in slots|sort(attribute='position') %}
+          <article class="planogram-slot">
+            <span class="slot-number">{{ slot.position }}</span>
+            <button class="slot-menu" type="button" aria-label="slot options">⋮</button>
+            <div class="slot-product-art {% if loop.index0 % 2 == 0 %}color-a{% elif loop.index0 % 3 == 0 %}color-b{% else %}color-c{% endif %}">
+              {% if slot.product and slot.product.image_local_path and slot.product.barcode %}
+                <img src="{{ url_for('catalogue_product_image', barcode=slot.product.barcode) }}" alt="{{ slot.product.name }} package" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+                <span class="slot-product-fallback" hidden>{{ slot.product.name[:2]|upper }}</span>
+              {% elif slot.product %}
+                <span class="slot-product-fallback">{{ slot.product.name[:2]|upper }}</span>
+              {% else %}
+                <span class="slot-product-fallback">+</span>
+              {% endif %}
+            </div>
+            {% if slot.product %}
+            <strong>{{ slot.product.name }}</strong>
+            <small>{{ slot.product.category }}</small>
+            <span class="slot-price">{% if slot.product.price %}₹{{ '%.0f'|format(slot.product.price|float) }}{% else %}—{% endif %}</span>
+            {% else %}
+            <strong>Empty Slot</strong>
+            <small>Waiting for product</small>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="planogram-actions">
+      <button class="button-secondary add-row" type="button" data-open-dialog="add-row-dialog">+ Add Row</button>
+      <button class="button-secondary" type="button" data-open-dialog="add-slot-dialog">+ Add Product</button>
+      <form action="{{ url_for('clear_planogram') }}" method="post" onsubmit="return confirm('Clear all planogram rows and assignments?')"><button class="button-outline" type="submit">Clear Planogram</button></form>
+      <form action="{{ url_for('save_planogram') }}" method="post"><button class="button-muted" type="submit">Save Planogram</button></form>
+      <a class="button-primary action-submit" href="{{ url_for('upload_page') }}">▷ Apply to Analysis</a>
+    </div>
+  </div>
+
+  <aside class="planogram-side panel">
+    <div class="planogram-detail-header">
+      <h3>Slot Details</h3>
+      <button class="link-button" type="button">Edit Slot</button>
+    </div>
+
+    <div class="slot-detail-card">
+      <div class="slot-detail-header">
+        <div class="slot-detail-badge">Lay's</div>
+        <span class="assigned-pill">Assigned</span>
+      </div>
+
+      <dl class="slot-detail-list">
+        <div><dt>Row</dt><dd>1 (Eye Level)</dd></div>
+        <div><dt>Slot</dt><dd>1</dd></div>
+        <div><dt>Product ID</dt><dd>P001</dd></div>
+        <div><dt>Expected Price</dt><dd>₹50</dd></div>
+        <div><dt>Category</dt><dd>Chips</dd></div>
+        <div><dt>Facing Count</dt><dd>3</dd></div>
+        <div><dt>Brand</dt><dd>Lay's</dd></div>
+      </dl>
+    </div>
+
+    <div class="slot-overlay">
+      <div class="slot-overlay-head">
+        <span>All Slots Overview</span>
+        <div class="mini-legend">
+          <span><i class="dot green"></i> Assigned ({{ assigned_slots }})</span>
+          <span><i class="dot gray"></i> Empty ({{ empty_slots }})</span>
+        </div>
+      </div>
+
+      <div class="slot-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Slot</th>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in shelf_rows.values() %}
+              {% set row_number = loop.index %}
+              {% for slot in row|sort(attribute='position') %}
+              <tr>
+                <td>{{ row_number }}</td>
+                <td>{{ slot.position }}</td>
+                <td>{{ slot.product.name if slot.product else '—' }}</td>
+                <td>{% if slot.product and slot.product.price %}₹{{ '%.0f'|format(slot.product.price|float) }}{% else %}—{% endif %}</td>
+                <td><span class="status-badge {{ 'assigned' if slot.product else 'empty' }}">{{ 'Assigned' if slot.product else 'Empty' }}</span></td>
+              </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<dialog class="product-dialog" id="add-row-dialog">
+  <form action="{{ url_for('add_planogram_row') }}" method="post">
+    <div class="dialog-heading"><div><span class="panel-kicker">PLANOGRAM EDITOR</span><h2>Add shelf row</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Close">×</button></div>
+    <div class="form-grid"><label class="form-full">Row name<input name="shelf" placeholder="e.g. Eye Level" required maxlength="60"></label></div>
+    <div class="dialog-actions"><button class="button-secondary" type="button" data-close-dialog>Cancel</button><button class="button-primary" type="submit">Add row</button></div>
+  </form>
+</dialog>
+
+<dialog class="product-dialog" id="add-slot-dialog">
+  <form action="{{ url_for('assign_planogram_slot') }}" method="post">
+    <div class="dialog-heading"><div><span class="panel-kicker">PLANOGRAM EDITOR</span><h2>Assign product to slot</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Close">×</button></div>
+    <div class="form-grid">
+      <label>Shelf<select name="shelf" required>{% for shelf in shelf_rows.keys() %}<option value="{{ shelf }}">{{ shelf }}</option>{% endfor %}</select></label>
+      <label>Slot position<input name="position" type="number" min="1" value="1" required></label>
+      <label class="form-full">Product<select name="sku" required>{% for product in products %}<option value="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>{% endfor %}</select></label>
+      <label class="form-full">Expected facings<input name="expected_facings" type="number" min="1" value="1" required></label>
+    </div>
+    <div class="dialog-actions"><button class="button-secondary" type="button" data-close-dialog>Cancel</button><button class="button-primary" type="submit">Assign product</button></div>
+  </form>
+</dialog>
+
+<script>
+document.querySelectorAll('[data-open-dialog]').forEach(button => button.addEventListener('click', () => document.getElementById(button.dataset.openDialog).showModal()));
+document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
+</script>
+{% endblock %}

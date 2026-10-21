@@ -1,0 +1,5590 @@
+{
+  "report_id": "7e5512c8536a40c5a5f972d270ca9b94",
+  "created_at": "Oct 21, 2026 · 16:46 UTC",
+  "store_name": "Local Store",
+  "planogram_name": "Current planogram",
+  "image_name": "WhatsApp_Image_2026-10-21_at_8.12.51_PM.jpeg",
+  "matching_audit": {
+    "matches": [
+      {
+        "detection_index": 0,
+        "detector_label": "object",
+        "detector_confidence": 0.8335,
+        "box": [
+          615.14,
+          853.36,
+          676.55,
+          992.63
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 1,
+        "detector_label": "object",
+        "detector_confidence": 0.804,
+        "box": [
+          515.54,
+          830.03,
+          561.68,
+          966.31
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 2,
+        "detector_label": "object",
+        "detector_confidence": 0.7901,
+        "box": [
+          563.89,
+          842.37,
+          612.49,
+          981.49
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 3,
+        "detector_label": "object",
+        "detector_confidence": 0.7611,
+        "box": [
+          403.55,
+          809.04,
+          435.92,
+          920.19
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 4,
+        "detector_label": "object",
+        "detector_confidence": 0.7489,
+        "box": [
+          370.4,
+          805.75,
+          400.53,
+          912.53
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 5,
+        "detector_label": "object",
+        "detector_confidence": 0.7376,
+        "box": [
+          439.21,
+          808.44,
+          482.38,
+          930.92
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 6,
+        "detector_label": "object",
+        "detector_confidence": 0.7224,
+        "box": [
+          909.65,
+          710.06,
+          958.9,
+          848.15
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 7,
+        "detector_label": "object",
+        "detector_confidence": 0.6516,
+        "box": [
+          553.14,
+          1068.74,
+          592.23,
+          1158.12
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 8,
+        "detector_label": "object",
+        "detector_confidence": 0.6373,
+        "box": [
+          427.07,
+          659.66,
+          451.35,
+          767.32
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 9,
+        "detector_label": "object",
+        "detector_confidence": 0.6278,
+        "box": [
+          515.14,
+          1051.51,
+          548.8,
+          1146.32
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 10,
+        "detector_label": "object",
+        "detector_confidence": 0.6183,
+        "box": [
+          484.06,
+          819.35,
+          513.18,
+          934.26
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 11,
+        "detector_label": "object",
+        "detector_confidence": 0.6098,
+        "box": [
+          534.26,
+          1209.24,
+          583.54,
+          1279.69
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 12,
+        "detector_label": "object",
+        "detector_confidence": 0.5905,
+        "box": [
+          799.27,
+          507.94,
+          868.7,
+          571.43
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 13,
+        "detector_label": "object",
+        "detector_confidence": 0.588,
+        "box": [
+          731.53,
+          361.94,
+          769.0,
+          446.89
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 14,
+        "detector_label": "object",
+        "detector_confidence": 0.5823,
+        "box": [
+          875.49,
+          508.97,
+          960.0,
+          637.22
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 15,
+        "detector_label": "object",
+        "detector_confidence": 0.5818,
+        "box": [
+          543.96,
+          191.49,
+          595.59,
+          245.41
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 16,
+        "detector_label": "object",
+        "detector_confidence": 0.5791,
+        "box": [
+          597.66,
+          688.5,
+          643.98,
+          802.85
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 17,
+        "detector_label": "object",
+        "detector_confidence": 0.536,
+        "box": [
+          387.59,
+          1145.8,
+          434.22,
+          1249.4
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 18,
+        "detector_label": "object",
+        "detector_confidence": 0.5354,
+        "box": [
+          479.66,
+          1046.66,
+          513.19,
+          1135.4
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 19,
+        "detector_label": "object",
+        "detector_confidence": 0.533,
+        "box": [
+          877.03,
+          508.48,
+          959.47,
+          572.64
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 20,
+        "detector_label": "object",
+        "detector_confidence": 0.5263,
+        "box": [
+          441.93,
+          1159.93,
+          487.95,
+          1275.8
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 21,
+        "detector_label": "object",
+        "detector_confidence": 0.5154,
+        "box": [
+          870.64,
+          911.41,
+          959.89,
+          1070.33
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 22,
+        "detector_label": "object",
+        "detector_confidence": 0.5093,
+        "box": [
+          675.57,
+          524.59,
+          749.22,
+          626.51
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 23,
+        "detector_label": "object",
+        "detector_confidence": 0.5089,
+        "box": [
+          1.66,
+          650.37,
+          97.82,
+          675.47
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 24,
+        "detector_label": "object",
+        "detector_confidence": 0.502,
+        "box": [
+          490.84,
+          1176.11,
+          531.49,
+          1275.85
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 25,
+        "detector_label": "object",
+        "detector_confidence": 0.5009,
+        "box": [
+          520.34,
+          685.65,
+          548.46,
+          780.77
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 26,
+        "detector_label": "object",
+        "detector_confidence": 0.4981,
+        "box": [
+          782.87,
+          725.72,
+          816.18,
+          833.55
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 27,
+        "detector_label": "object",
+        "detector_confidence": 0.4827,
+        "box": [
+          829.84,
+          335.43,
+          874.46,
+          382.9
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 28,
+        "detector_label": "object",
+        "detector_confidence": 0.4824,
+        "box": [
+          488.68,
+          162.03,
+          536.09,
+          202.44
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 29,
+        "detector_label": "object",
+        "detector_confidence": 0.4819,
+        "box": [
+          675.01,
+          718.53,
+          716.57,
+          817.05
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 30,
+        "detector_label": "object",
+        "detector_confidence": 0.4754,
+        "box": [
+          601.08,
+          140.41,
+          657.0,
+          230.04
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 31,
+        "detector_label": "object",
+        "detector_confidence": 0.4682,
+        "box": [
+          659.13,
+          138.15,
+          711.42,
+          221.18
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 32,
+        "detector_label": "object",
+        "detector_confidence": 0.4667,
+        "box": [
+          798.36,
+          507.7,
+          867.07,
+          631.45
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 33,
+        "detector_label": "object",
+        "detector_confidence": 0.4661,
+        "box": [
+          584.22,
+          692.73,
+          607.04,
+          801.37
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 34,
+        "detector_label": "object",
+        "detector_confidence": 0.4594,
+        "box": [
+          205.74,
+          330.13,
+          262.18,
+          472.18
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 35,
+        "detector_label": "object",
+        "detector_confidence": 0.4446,
+        "box": [
+          727.36,
+          717.66,
+          778.4,
+          829.31
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 36,
+        "detector_label": "object",
+        "detector_confidence": 0.4416,
+        "box": [
+          451.99,
+          686.58,
+          475.0,
+          772.44
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 37,
+        "detector_label": "object",
+        "detector_confidence": 0.4377,
+        "box": [
+          493.75,
+          544.92,
+          517.81,
+          618.49
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 38,
+        "detector_label": "object",
+        "detector_confidence": 0.4313,
+        "box": [
+          648.55,
+          712.48,
+          675.06,
+          811.11
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 39,
+        "detector_label": "object",
+        "detector_confidence": 0.4292,
+        "box": [
+          895.12,
+          1125.52,
+          959.35,
+          1260.09
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 40,
+        "detector_label": "object",
+        "detector_confidence": 0.4152,
+        "box": [
+          588.79,
+          554.4,
+          615.33,
+          621.32
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 41,
+        "detector_label": "object",
+        "detector_confidence": 0.4151,
+        "box": [
+          1.69,
+          620.16,
+          100.03,
+          646.15
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 42,
+        "detector_label": "object",
+        "detector_confidence": 0.4037,
+        "box": [
+          689.11,
+          862.79,
+          733.51,
+          1016.46
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 43,
+        "detector_label": "object",
+        "detector_confidence": 0.4018,
+        "box": [
+          418.49,
+          226.64,
+          464.11,
+          265.2
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 44,
+        "detector_label": "object",
+        "detector_confidence": 0.3988,
+        "box": [
+          405.67,
+          657.31,
+          426.01,
+          765.52
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 45,
+        "detector_label": "object",
+        "detector_confidence": 0.3961,
+        "box": [
+          336.9,
+          817.37,
+          367.64,
+          905.22
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 46,
+        "detector_label": "object",
+        "detector_confidence": 0.3954,
+        "box": [
+          588.4,
+          1232.33,
+          656.6,
+          1279.94
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 47,
+        "detector_label": "object",
+        "detector_confidence": 0.3947,
+        "box": [
+          826.92,
+          397.69,
+          873.16,
+          441.97
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 48,
+        "detector_label": "object",
+        "detector_confidence": 0.3876,
+        "box": [
+          807.06,
+          916.57,
+          862.78,
+          1040.78
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 49,
+        "detector_label": "object",
+        "detector_confidence": 0.3785,
+        "box": [
+          326.18,
+          1119.73,
+          362.66,
+          1208.95
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 50,
+        "detector_label": "object",
+        "detector_confidence": 0.3766,
+        "box": [
+          802.46,
+          587.06,
+          867.13,
+          633.97
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 51,
+        "detector_label": "object",
+        "detector_confidence": 0.3732,
+        "box": [
+          444.88,
+          507.04,
+          473.85,
+          614.5
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 52,
+        "detector_label": "object",
+        "detector_confidence": 0.3721,
+        "box": [
+          302.13,
+          404.77,
+          364.69,
+          468.29
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 53,
+        "detector_label": "object",
+        "detector_confidence": 0.3699,
+        "box": [
+          673.68,
+          487.69,
+          755.97,
+          627.41
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 54,
+        "detector_label": "object",
+        "detector_confidence": 0.3673,
+        "box": [
+          258.56,
+          634.49,
+          298.85,
+          741.85
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 55,
+        "detector_label": "object",
+        "detector_confidence": 0.3652,
+        "box": [
+          103.83,
+          626.1,
+          217.26,
+          651.29
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 56,
+        "detector_label": "object",
+        "detector_confidence": 0.3649,
+        "box": [
+          383.31,
+          652.98,
+          402.58,
+          768.26
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 57,
+        "detector_label": "object",
+        "detector_confidence": 0.3634,
+        "box": [
+          448.38,
+          1026.27,
+          477.25,
+          1113.54
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 58,
+        "detector_label": "object",
+        "detector_confidence": 0.3574,
+        "box": [
+          301.38,
+          529.97,
+          329.06,
+          606.78
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 59,
+        "detector_label": "object",
+        "detector_confidence": 0.3546,
+        "box": [
+          325.36,
+          1119.55,
+          377.2,
+          1215.65
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      },
+      {
+        "detection_index": 60,
+        "detector_label": "object",
+        "detector_confidence": 0.3546,
+        "box": [
+          785.81,
+          1107.02,
+          827.52,
+          1247.74
+        ],
+        "image_width": 960,
+        "image_height": 1280,
+        "candidates": [],
+        "top_similarity": null,
+        "top_margin": null,
+        "accepted_sku": null,
+        "status": "Unknown / Needs Review",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "similarity_is_probability": false
+      }
+    ],
+    "findings": [
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "1",
+        "expected_sku": "6111242100992",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "6111242100992",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "2",
+        "expected_sku": "8904004402261",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8904004402261",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "3",
+        "expected_sku": "8901030807176",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901030807176",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "4",
+        "expected_sku": "8901499023742",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901499023742",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "5",
+        "expected_sku": "7622202243516",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "7622202243516",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "1",
+        "expected_sku": "3017620425035",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "3017620425035",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "2",
+        "expected_sku": "5449000000996",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "5449000000996",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "3",
+        "expected_sku": "7613035833272",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "7613035833272",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "4",
+        "expected_sku": "8901719134845",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901719134845",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "5",
+        "expected_sku": "90162602",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "90162602",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "1",
+        "expected_sku": "8902080000227",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8902080000227",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "2",
+        "expected_sku": "8901719134852",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901719134852",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "3",
+        "expected_sku": "8901063139329",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901063139329",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "4",
+        "expected_sku": "",
+        "expected_facings": 0,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Empty Slot",
+        "sku": "",
+        "product": "",
+        "detail": "Intentionally empty planogram slot."
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "5",
+        "expected_sku": "",
+        "expected_facings": 0,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Empty Slot",
+        "sku": "",
+        "product": "",
+        "detail": "Intentionally empty planogram slot."
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 0,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1633,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 1,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1051,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 2,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0635,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 3,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 4,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 5,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 6,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.134,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 7,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 8,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2876,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 9,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2293,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 10,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 11,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0833,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 12,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2649,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 13,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 14,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2201,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 15,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 16,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2334,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 17,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1401,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 18,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4145,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 19,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2174,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 20,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1456,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 21,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.233,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 22,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2896,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 23,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2591,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 24,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1266,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 25,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2167,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 26,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1642,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 27,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1582,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 28,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3313,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 29,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2005,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 30,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2763,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 31,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4211,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 32,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3349,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 33,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1022,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 34,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 35,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0787,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 36,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2902,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 37,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3634,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 38,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2145,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 39,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1707,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 40,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1357,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 41,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2649,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 42,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2022,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 43,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2984,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 44,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1658,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 45,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 46,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 47,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 48,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2938,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 49,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2061,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 50,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3479,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 51,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3143,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 52,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 53,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.277,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 54,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3871,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 55,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1638,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 56,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 57,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4105,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 58,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3321,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 59,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1704,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 60,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2014,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      }
+    ],
+    "slot_findings": [
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "1",
+        "expected_sku": "6111242100992",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "6111242100992",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "2",
+        "expected_sku": "8904004402261",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8904004402261",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "3",
+        "expected_sku": "8901030807176",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901030807176",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "4",
+        "expected_sku": "8901499023742",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901499023742",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "1",
+        "slot": "5",
+        "expected_sku": "7622202243516",
+        "expected_facings": 3,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "7622202243516",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "1",
+        "expected_sku": "3017620425035",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "3017620425035",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "2",
+        "expected_sku": "5449000000996",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "5449000000996",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "3",
+        "expected_sku": "7613035833272",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "7613035833272",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "4",
+        "expected_sku": "8901719134845",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901719134845",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "2",
+        "slot": "5",
+        "expected_sku": "90162602",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "90162602",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "1",
+        "expected_sku": "8902080000227",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8902080000227",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "2",
+        "expected_sku": "8901719134852",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901719134852",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "3",
+        "expected_sku": "8901063139329",
+        "expected_facings": 2,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Needs Review",
+        "sku": "8901063139329",
+        "product": "",
+        "detail": "No accepted product was mapped here. This is not reported Missing because occlusion or detector failure cannot be ruled out.",
+        "uncertain_detections": []
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "4",
+        "expected_sku": "",
+        "expected_facings": 0,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Empty Slot",
+        "sku": "",
+        "product": "",
+        "detail": "Intentionally empty planogram slot."
+      },
+      {
+        "store_id": "STORE001",
+        "planogram_id": "SNACKS_V1",
+        "shelf": "S1",
+        "row": "3",
+        "slot": "5",
+        "expected_sku": "",
+        "expected_facings": 0,
+        "observed_skus": [],
+        "observed_count": 0,
+        "status": "Empty Slot",
+        "sku": "",
+        "product": "",
+        "detail": "Intentionally empty planogram slot."
+      }
+    ],
+    "unmatched_findings": [
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 0,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1633,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 1,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1051,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 2,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0635,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 3,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 4,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 5,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 6,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.134,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 7,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 8,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2876,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 9,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2293,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 10,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 11,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0833,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 12,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2649,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 13,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 14,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2201,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 15,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 16,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2334,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 17,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1401,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 18,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4145,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 19,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2174,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 20,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1456,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 21,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.233,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 22,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2896,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 23,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2591,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 24,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1266,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 25,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2167,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 26,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1642,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 27,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1582,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 28,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3313,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 29,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2005,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 30,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2763,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 31,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4211,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 32,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3349,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 33,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1022,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 34,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 35,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0787,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 36,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2902,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 37,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3634,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 38,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2145,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 39,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1707,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 40,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1357,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 41,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2649,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 42,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2022,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 43,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "1",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2984,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 44,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1658,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 45,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 46,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 47,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 48,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2938,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 49,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2061,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 50,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3479,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 51,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3143,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 52,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a row-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 53,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "4"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.277,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 54,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3871,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 55,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "1"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1638,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 56,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": null,
+          "status": "Needs Review",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.0,
+          "assumptions": [],
+          "detail": "Detection center is too close to a slot-band boundary."
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 57,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "3"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.4105,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 58,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "2",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.3321,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 59,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "2"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.1704,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      },
+      {
+        "status": "Needs Review",
+        "sku": "",
+        "product": "object",
+        "detail": "CLIP matching requires the optional packages in requirements-matching.txt.",
+        "detection_index": 60,
+        "candidates": [],
+        "slot_mapping": {
+          "slot_identity": [
+            "STORE001",
+            "SNACKS_V1",
+            "S1",
+            "3",
+            "5"
+          ],
+          "status": "Mapped (assumption-based)",
+          "mapping_id": "equal-grid-v1",
+          "confidence": 0.2014,
+          "assumptions": [
+            "Image is upright and shows one complete shelf face.",
+            "Rows are equally spaced horizontal bands from top to bottom.",
+            "Slots are equally spaced left-to-right within each row.",
+            "No shelf-region calibration or perspective correction is applied."
+          ]
+        }
+      }
+    ],
+    "slot_mapping": {
+      "id": "equal-grid-v1",
+      "trusted": false,
+      "assumptions": [
+        "Equal-grid mapping estimates horizontal row bands and left-to-right slots from bbox centers.",
+        "This mapping is not perspective-aware or calibrated against shelf boundaries.",
+        "SKU acceptance requires a labelled validation calibration file; otherwise all candidates remain Needs Review.",
+        "A product with no mapped detection is Needs Review, not Missing, because occlusion/model failure cannot be ruled out."
+      ]
+    },
+    "calibration": {
+      "path": "D:\\ShelfSenseAI\\data\\clip_calibration.json",
+      "acceptance_threshold": null,
+      "minimum_margin": 0.0,
+      "calibration_status": "uncalibrated"
+    },
+    "matching_error": "CLIP matching requires the optional packages in requirements-matching.txt.",
+    "empty_slot_count": 2,
+    "detection_count": 61
+  },
+  "compliance": [
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "1",
+      "position": "1",
+      "slot": "1",
+      "sku": "6111242100992",
+      "product": "Perly",
+      "expected": 3,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "1",
+      "position": "2",
+      "slot": "2",
+      "sku": "8904004402261",
+      "product": "PHALHARI CHIWDA",
+      "expected": 3,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "1",
+      "position": "3",
+      "slot": "3",
+      "sku": "8901030807176",
+      "product": "Classic Malt",
+      "expected": 3,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "1",
+      "position": "4",
+      "slot": "4",
+      "sku": "8901499023742",
+      "product": "Kellogg’s Millet Muesli",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "1",
+      "position": "5",
+      "slot": "5",
+      "sku": "7622202243516",
+      "product": "",
+      "expected": 3,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "2",
+      "position": "1",
+      "slot": "1",
+      "sku": "3017620425035",
+      "product": "Nutella",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "2",
+      "position": "2",
+      "slot": "2",
+      "sku": "5449000000996",
+      "product": "Coca-Cola Original",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "2",
+      "position": "3",
+      "slot": "3",
+      "sku": "7613035833272",
+      "product": "Perrier",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "2",
+      "position": "4",
+      "slot": "4",
+      "sku": "8901719134845",
+      "product": "Parle-G Biscuit",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "2",
+      "position": "5",
+      "slot": "5",
+      "sku": "90162602",
+      "product": "Red Bull Energy Drink",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "3",
+      "position": "1",
+      "slot": "1",
+      "sku": "8902080000227",
+      "product": "Sting Energy",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "3",
+      "position": "2",
+      "slot": "2",
+      "sku": "8901719134852",
+      "product": "Parle G biscuit",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "3",
+      "position": "3",
+      "slot": "3",
+      "sku": "8901063139329",
+      "product": "bourbon",
+      "expected": 2,
+      "observed": null,
+      "status": "Needs Review",
+      "detail": "No matching detection was observed, but slot mapping is unavailable; absence is not confirmed."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "3",
+      "position": "4",
+      "slot": "4",
+      "sku": "",
+      "product": "Empty slot",
+      "expected": 0,
+      "observed": null,
+      "status": "Empty Slot",
+      "detail": "Intentionally unassigned planogram slot."
+    },
+    {
+      "store_id": "STORE001",
+      "planogram_id": "SNACKS_V1",
+      "shelf": "S1",
+      "row": "3",
+      "position": "5",
+      "slot": "5",
+      "sku": "",
+      "product": "Empty slot",
+      "expected": 0,
+      "observed": null,
+      "status": "Empty Slot",
+      "detail": "Intentionally unassigned planogram slot."
+    }
+  ],
+  "detections": [
+    {
+      "label": "object",
+      "confidence": 0.8335,
+      "box": [
+        615.14,
+        853.36,
+        676.55,
+        992.63
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.804,
+      "box": [
+        515.54,
+        830.03,
+        561.68,
+        966.31
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.7901,
+      "box": [
+        563.89,
+        842.37,
+        612.49,
+        981.49
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.7611,
+      "box": [
+        403.55,
+        809.04,
+        435.92,
+        920.19
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.7489,
+      "box": [
+        370.4,
+        805.75,
+        400.53,
+        912.53
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.7376,
+      "box": [
+        439.21,
+        808.44,
+        482.38,
+        930.92
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.7224,
+      "box": [
+        909.65,
+        710.06,
+        958.9,
+        848.15
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.6516,
+      "box": [
+        553.14,
+        1068.74,
+        592.23,
+        1158.12
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.6373,
+      "box": [
+        427.07,
+        659.66,
+        451.35,
+        767.32
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.6278,
+      "box": [
+        515.14,
+        1051.51,
+        548.8,
+        1146.32
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.6183,
+      "box": [
+        484.06,
+        819.35,
+        513.18,
+        934.26
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.6098,
+      "box": [
+        534.26,
+        1209.24,
+        583.54,
+        1279.69
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5905,
+      "box": [
+        799.27,
+        507.94,
+        868.7,
+        571.43
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.588,
+      "box": [
+        731.53,
+        361.94,
+        769.0,
+        446.89
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5823,
+      "box": [
+        875.49,
+        508.97,
+        960.0,
+        637.22
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5818,
+      "box": [
+        543.96,
+        191.49,
+        595.59,
+        245.41
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5791,
+      "box": [
+        597.66,
+        688.5,
+        643.98,
+        802.85
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.536,
+      "box": [
+        387.59,
+        1145.8,
+        434.22,
+        1249.4
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5354,
+      "box": [
+        479.66,
+        1046.66,
+        513.19,
+        1135.4
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.533,
+      "box": [
+        877.03,
+        508.48,
+        959.47,
+        572.64
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5263,
+      "box": [
+        441.93,
+        1159.93,
+        487.95,
+        1275.8
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5154,
+      "box": [
+        870.64,
+        911.41,
+        959.89,
+        1070.33
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5093,
+      "box": [
+        675.57,
+        524.59,
+        749.22,
+        626.51
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5089,
+      "box": [
+        1.66,
+        650.37,
+        97.82,
+        675.47
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.502,
+      "box": [
+        490.84,
+        1176.11,
+        531.49,
+        1275.85
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.5009,
+      "box": [
+        520.34,
+        685.65,
+        548.46,
+        780.77
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4981,
+      "box": [
+        782.87,
+        725.72,
+        816.18,
+        833.55
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4827,
+      "box": [
+        829.84,
+        335.43,
+        874.46,
+        382.9
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4824,
+      "box": [
+        488.68,
+        162.03,
+        536.09,
+        202.44
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4819,
+      "box": [
+        675.01,
+        718.53,
+        716.57,
+        817.05
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4754,
+      "box": [
+        601.08,
+        140.41,
+        657.0,
+        230.04
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4682,
+      "box": [
+        659.13,
+        138.15,
+        711.42,
+        221.18
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4667,
+      "box": [
+        798.36,
+        507.7,
+        867.07,
+        631.45
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4661,
+      "box": [
+        584.22,
+        692.73,
+        607.04,
+        801.37
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4594,
+      "box": [
+        205.74,
+        330.13,
+        262.18,
+        472.18
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4446,
+      "box": [
+        727.36,
+        717.66,
+        778.4,
+        829.31
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4416,
+      "box": [
+        451.99,
+        686.58,
+        475.0,
+        772.44
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4377,
+      "box": [
+        493.75,
+        544.92,
+        517.81,
+        618.49
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4313,
+      "box": [
+        648.55,
+        712.48,
+        675.06,
+        811.11
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4292,
+      "box": [
+        895.12,
+        1125.52,
+        959.35,
+        1260.09
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4152,
+      "box": [
+        588.79,
+        554.4,
+        615.33,
+        621.32
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4151,
+      "box": [
+        1.69,
+        620.16,
+        100.03,
+        646.15
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4037,
+      "box": [
+        689.11,
+        862.79,
+        733.51,
+        1016.46
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.4018,
+      "box": [
+        418.49,
+        226.64,
+        464.11,
+        265.2
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3988,
+      "box": [
+        405.67,
+        657.31,
+        426.01,
+        765.52
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3961,
+      "box": [
+        336.9,
+        817.37,
+        367.64,
+        905.22
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3954,
+      "box": [
+        588.4,
+        1232.33,
+        656.6,
+        1279.94
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3947,
+      "box": [
+        826.92,
+        397.69,
+        873.16,
+        441.97
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3876,
+      "box": [
+        807.06,
+        916.57,
+        862.78,
+        1040.78
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3785,
+      "box": [
+        326.18,
+        1119.73,
+        362.66,
+        1208.95
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3766,
+      "box": [
+        802.46,
+        587.06,
+        867.13,
+        633.97
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3732,
+      "box": [
+        444.88,
+        507.04,
+        473.85,
+        614.5
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3721,
+      "box": [
+        302.13,
+        404.77,
+        364.69,
+        468.29
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3699,
+      "box": [
+        673.68,
+        487.69,
+        755.97,
+        627.41
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3673,
+      "box": [
+        258.56,
+        634.49,
+        298.85,
+        741.85
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3652,
+      "box": [
+        103.83,
+        626.1,
+        217.26,
+        651.29
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3649,
+      "box": [
+        383.31,
+        652.98,
+        402.58,
+        768.26
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3634,
+      "box": [
+        448.38,
+        1026.27,
+        477.25,
+        1113.54
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3574,
+      "box": [
+        301.38,
+        529.97,
+        329.06,
+        606.78
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3546,
+      "box": [
+        325.36,
+        1119.55,
+        377.2,
+        1215.65
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    },
+    {
+      "label": "object",
+      "confidence": 0.3546,
+      "box": [
+        785.81,
+        1107.02,
+        827.52,
+        1247.74
+      ],
+      "image_width": 960,
+      "image_height": 1280
+    }
+  ]
+}
