@@ -8,13 +8,6 @@ from typing import Any, Callable
 from src.planogram import _slot_identity
 
 
-def _first_candidate_product(item: dict[str, Any], fallback: str = "") -> str:
-    candidates = item.get("candidates")
-    if candidates and isinstance(candidates, list) and len(candidates) > 0 and isinstance(candidates[0], dict):
-        return str(candidates[0].get("product") or fallback)
-    return fallback
-
-
 def compare_planogram(
     planogram: list[dict[str, Any]],
     matches: list[dict[str, Any]],
@@ -80,7 +73,7 @@ def compare_planogram(
                         **base,
                         "status": "Unexpected",
                         "sku": item["accepted_sku"],
-                        "product": _first_candidate_product(item),
+                        "product": item["candidates"][0].get("product", "") if item.get("candidates") else "",
                         "detail": "A confidently matched product maps to an intentionally empty planogram slot.",
                         "detection_index": item.get("detection_index"),
                     })
@@ -107,7 +100,7 @@ def compare_planogram(
                     **base,
                     "status": "Misplaced",
                     "sku": item["accepted_sku"],
-                    "product": _first_candidate_product(item),
+                    "product": item.get("candidates", [{}])[0].get("product", ""),
                     "detail": f"SKU {item['accepted_sku']} is confidently mapped to a slot expecting {expected_sku}.",
                     "detection_index": item.get("detection_index"),
                     "slot_mapping": item.get("slot_mapping", {}),
@@ -137,7 +130,7 @@ def compare_planogram(
                     **base,
                     "status": status,
                     "sku": expected_sku,
-                    "product": _first_candidate_product(item),
+                    "product": item.get("candidates", [{}])[0].get("product", ""),
                     "detail": detail,
                     "detection_index": item.get("detection_index"),
                     "slot_mapping": item.get("slot_mapping", {}),
@@ -157,7 +150,7 @@ def compare_planogram(
         findings.append({
             "status": status,
             "sku": sku or "",
-            "product": _first_candidate_product(item, item.get("detector_label", "")),
+            "product": item.get("candidates", [{}])[0].get("product", item.get("detector_label", "")),
             "detail": item.get("detail", "SKU or slot mapping is uncertain."),
             "detection_index": item.get("detection_index"),
             "candidates": item.get("candidates", []),

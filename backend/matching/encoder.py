@@ -51,23 +51,3 @@ class TransformersClipEncoder:
             features = self.model.get_image_features(**inputs)
             features = features / features.norm(p=2, dim=-1, keepdim=True).clamp(min=1e-12)
         return features.detach().cpu().tolist()
-
-
-class PerceptualFeatureEncoder:
-    """Lightweight Pillow-only spatial color grid encoder for offline testing and fallback."""
-
-    def __init__(self, model_id: str = "perceptual-grid-v1"):
-        self.model_id = model_id
-
-    def encode_images(self, images: list[Image.Image]) -> list[list[float]]:
-        results = []
-        for img in images:
-            resized = img.convert("RGB").resize((8, 8), Image.Resampling.BILINEAR)
-            raw = list(resized.tobytes())
-            pixels = [float(v) / 255.0 for v in raw]
-            norm = sum(v * v for v in pixels) ** 0.5
-            if norm > 0:
-                results.append([round(v / norm, 6) for v in pixels])
-            else:
-                results.append([0.0] * len(pixels))
-        return results

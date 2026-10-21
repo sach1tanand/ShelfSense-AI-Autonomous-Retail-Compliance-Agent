@@ -9,7 +9,7 @@ from typing import Any
 from PIL import Image
 
 from .catalog import CatalogueEmbeddingCache, load_catalogue_references
-from .encoder import ClipEncoderUnavailable, ImageEncoder, PerceptualFeatureEncoder, TransformersClipEncoder
+from .encoder import ClipEncoderUnavailable, ImageEncoder, TransformersClipEncoder
 
 
 class MatchingUnavailable(RuntimeError):
@@ -82,13 +82,10 @@ class ProductRecognizer:
 
     def _get_encoder(self) -> ImageEncoder:
         if self.encoder is None:
-            if self.model_id in {"fallback", "perceptual", "perceptual-grid-v1"}:
-                self.encoder = PerceptualFeatureEncoder(self.model_id)
-            else:
-                try:
-                    self.encoder = TransformersClipEncoder(self.model_id)
-                except ClipEncoderUnavailable as error:
-                    raise MatchingUnavailable(str(error)) from error
+            try:
+                self.encoder = TransformersClipEncoder(self.model_id)
+            except ClipEncoderUnavailable as error:
+                raise MatchingUnavailable(str(error)) from error
         return self.encoder
 
     def match_detections(

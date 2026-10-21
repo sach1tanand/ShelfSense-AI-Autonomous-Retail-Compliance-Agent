@@ -15,76 +15,12 @@ class CoordinateShelfMapper:
     """Map normalized bbox centers to equal-grid planogram rows and slots."""
 
     mapping_id = "equal-grid-v1"
+    trusted = False
 
-    def __init__(self, boundary_margin: float = 0.06, trusted: bool = False):
+    def __init__(self, boundary_margin: float = 0.06):
         if not 0 <= boundary_margin < 0.5:
             raise ValueError("boundary_margin must be in [0, 0.5)")
         self.boundary_margin = boundary_margin
-        self.trusted = trusted
-
-    @staticmethod
-    def cluster_detections_by_row(
-        detections: list[dict[str, Any]], vertical_threshold_ratio: float = 0.45
-    ) -> list[list[dict[str, Any]]]:
-        """Group detections into shelf rows ordered top-to-bottom, and left-to-right within each row.
-
-        Does not assume sorting all detections by x-coordinate works across multiple rows.
-        """
-        valid = []
-        for index, item in enumerate(detections):
-            box = item.get("box")
-            if isinstance(box, (list, tuple)) and len(box) == 4:
-                try:
-                    x1, y1, x2, y2 = [float(v) for v in box]
-                    if x2 > x1 and y2 > y1:
-                        valid.append({
-                            "index": index,
-                            "item": item,
-                            "box": (x1, y1, x2, y2),
-                            "cy": (y1 + y2) / 2,
-                            "h": y2 - y1,
-                            "cx": (x1 + x2) / 2,
-                        })
-                except (TypeError, ValueError):
-                    pass
-        if not valid:
-            return []
-
-        # Sort by vertical center top to bottom
-        valid.sort(key=lambda d: d["cy"])
-        rows: list[list[dict[str, Any]]] = []
-        current_row: list[dict[str, Any]] = []
-        row_cy_sum = 0.0
-        row_h_sum = 0.0
-
-        for candidate in valid:
-            if not current_row:
-                current_row.append(candidate)
-                row_cy_sum = candidate["cy"]
-                row_h_sum = candidate["h"]
-            else:
-                avg_cy = row_cy_sum / len(current_row)
-                avg_h = row_h_sum / len(current_row)
-                threshold = max(avg_h, candidate["h"]) * vertical_threshold_ratio
-                if abs(candidate["cy"] - avg_cy) <= threshold:
-                    current_row.append(candidate)
-                    row_cy_sum += candidate["cy"]
-                    row_h_sum += candidate["h"]
-                else:
-                    rows.append(current_row)
-                    current_row = [candidate]
-                    row_cy_sum = candidate["cy"]
-                    row_h_sum = candidate["h"]
-        if current_row:
-            rows.append(current_row)
-
-        # Sort rows top-to-bottom and within each row sort left-to-right by x
-        rows.sort(key=lambda r: sum(d["cy"] for d in r) / len(r))
-        result = []
-        for row in rows:
-            row.sort(key=lambda d: d["box"][0])
-            result.append([d["item"] for d in row])
-        return result
 
     def map_detection(self, detection: dict[str, Any], planogram: list[dict[str, Any]]) -> dict[str, Any]:
         box = detection.get("box")

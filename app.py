@@ -8,11 +8,7 @@ import json
 import math
 import os
 import platform
-import time
-import cv2
 import re
-
-
 import uuid
 from pathlib import Path
 
@@ -41,110 +37,6 @@ app.config["SECRET_KEY"] = "shelfsense-local-dev-key"
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-
-@app.get("/detect_page")
-def detect_page():
-    """Render a simple upload page for detection-only workflow."""
-    return render_template(
-        "detect.html",
-        page_title="Run Product Detection",
-        active_page="detect",
-        settings=_load_settings(),
-    )
-
-@app.post("/detect")
-def detect():
-    """Handle image upload, run YOLO detection, and show results without full audit pipeline."""
-    image = request.files.get("shelf_image")
-    if image is None or not image.filename:
-        flash("Choose a shelf image to run detection.", "error")
-        return redirect(url_for("detect_page"))
-    if not _allowed_file(image.filename):
-        flash("Upload a supported image format (PNG, JPG, JPEG, WEBP).", "error")
-        return redirect(url_for("detect_page"))
-
-    safe_name = secure_filename(image.filename)
-    stored_path = UPLOAD_DIR / f"{uuid.uuid4().hex}_{safe_name}"
-    image.save(stored_path)
-
-    # Get confidence threshold from settings
-    settings = _load_settings()
-    try:
-        confidence = float(request.form.get("confidence_threshold", settings["detection_confidence"]))
-    except (TypeError, ValueError):
-        confidence = float(settings["detection_confidence"])
-    if not 0.1 <= confidence <= 0.95:
-        flash("Detection confidence must be between 0.10 and 0.95.", "error")
-        stored_path.unlink(missing_ok=True)
-        return redirect(url_for("detect_page"))
-
-    try:
-        start = time.time()
-        detections = detect_products(stored_path, confidence=confidence)
-        detect_time = time.time() - start
-    except DetectorUnavailable as err:
-        stored_path.unlink(missing_ok=True)
-        flash(str(err), "error")
-        return redirect(url_for("detect_page"))
-    except Exception:
-        stored_path.unlink(missing_ok=True)
-        app.logger.exception("Detection failed")
-        flash("Unexpected error during detection.", "error")
-        return redirect(url_for("detect_page"))
-
-    # Create an annotated image using Ultralytics result plotting
-    try:
-        from ultralytics import YOLO
-        import cv2
-
-
-
-        model = YOLO(MODEL_PATH)
-        results = model.predict(source=str(stored_path), conf=confidence, verbose=False)
-        # results[0].plot() returns a numpy array with boxes drawn
-        annotated = results[0].plot()
-        annotated_path = UPLOAD_DIR / f"annotated_{stored_path.name}"
-        cv2.imwrite(str(annotated_path), annotated)
-    except Exception:
-        annotated_path = None
-        app.logger.warning("Failed to generate annotated image.")
-
-    # Store temporary detection result
-    result_id = uuid.uuid4().hex
-    _detect_results[result_id] = {
-        "image_path": str(stored_path),
-        "annotated_path": str(annotated_path) if annotated_path else None,
-        "detections": detections,
-        "detect_time": detect_time,
-        "confidence": confidence,
-    }
-    return redirect(url_for("detect_result_page", result_id=result_id))
-
-@app.get("/detect/<result_id>")
-def detect_result_page(result_id: str):
-    result = _detect_results.get(result_id)
-    if result is None:
-        abort(404)
-    return render_template(
-        "detect_result.html",
-        result=result,
-        result_id=result_id,
-        model_configured=bool(MODEL_PATH and Path(MODEL_PATH).is_file()),
-    )
-
-@app.get("/detect_image/<result_id>")
-def detect_image(result_id: str):
-    result = _detect_results.get(result_id)
-    if result is None:
-        abort(404)
-    img_path = result.get("annotated_path") or result.get("image_path")
-    if not img_path or not Path(img_path).is_file():
-        abort(404)
-    suffix = Path(img_path).suffix.lower()
-    mime = "image/svg+xml" if suffix == ".svg" else "image/jpeg"
-    return send_file(io.BytesIO(Path(img_path).read_bytes()), mimetype=mime, download_name=Path(img_path).name, max_age=0)
-
-_detect_results: dict[str, dict] = {}
 _reports: dict[str, dict] = {}
 _matching_pipeline: ProductMatchingPipeline | None = None
 CATALOGUE_PATH = DATA_DIR / "catalogue.csv"
@@ -229,15 +121,9 @@ def _report_export_rows(report: dict) -> list[dict]:
 def _get_matching_pipeline() -> ProductMatchingPipeline:
     global _matching_pipeline
     if _matching_pipeline is None:
-        threshold_env = os.getenv("SHELFSENSE_ACCEPTANCE_THRESHOLD")
-        acceptance_threshold = float(threshold_env) if threshold_env is not None and threshold_env != "" else None
-        margin_env = os.getenv("SHELFSENSE_MINIMUM_MARGIN")
-        minimum_margin = float(margin_env) if margin_env is not None and margin_env != "" else 0.0
         _matching_pipeline = ProductMatchingPipeline(
             data_dir=DATA_DIR,
             model_id=os.getenv("SHELFSENSE_CLIP_MODEL", "openai/clip-vit-base-patch32"),
-            acceptance_threshold=acceptance_threshold,
-            minimum_margin=minimum_margin,
             top_k=int(os.getenv("SHELFSENSE_MATCH_TOP_K", "5")),
         )
     return _matching_pipeline
@@ -653,22 +539,6 @@ def analyze():
         flash("Image analysis failed unexpectedly. Check the model and image, then try again.", "error")
         return redirect(url_for("upload_page"))
 
-    matching_audit = None
-    try:
-        matching_audit = _get_matching_pipeline().run(
-            image_path=stored_path,
-            detections=detections,
-            catalogue=all_catalogue,
-            planogram=planogram,
-        )
-    except Exception as exc:
-        app.logger.warning("Product matching pipeline execution encountered an issue: %s", exc)
-        matching_audit = {
-            "matches": [],
-            "findings": [],
-            "matching_error": str(exc),
-        }
-
     try:
         planogram_audit = evaluate_planogram(planogram, all_catalogue, detections)
         compliance = planogram_audit["slots"]
@@ -688,24 +558,9 @@ def analyze():
     report["planogram_name"] = request.form.get("planogram", settings["default_planogram"]).strip()
     report["confidence_threshold"] = confidence
     report["planogram_audit"] = planogram_audit
-    report["matching_audit"] = matching_audit
     report_id = uuid.uuid4().hex
     report["image_path"] = str(stored_path.resolve())
     _reports[report_id] = report
-    try:
-        results_dir = DATA_DIR / "audit_results"
-        save_audit_result(results_dir, report_id, {
-            "report_id": report_id,
-            "created_at": report.get("created_at"),
-            "store_name": report.get("store_name"),
-            "planogram_name": report.get("planogram_name"),
-            "image_name": safe_name,
-            "matching_audit": matching_audit,
-            "compliance": compliance,
-            "detections": detections,
-        })
-    except Exception as exc:
-        app.logger.warning("Could not persist structured audit JSON: %s", exc)
     return redirect(url_for("report_detail", report_id=report_id))
 
 

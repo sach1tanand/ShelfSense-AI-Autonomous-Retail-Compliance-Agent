@@ -59,59 +59,36 @@ class ProductMatchingPipeline:
         catalogue: list[dict[str, Any]],
         planogram: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        image = None
+        with Image.open(image_path) as opened:
+            image = opened.convert("RGB")
         try:
-            with Image.open(image_path) as opened:
-                image = opened.convert("RGB")
-        except Exception as error:
-            matching_error = f"Unreadable or invalid image file: {error}"
+            matches = self.recognizer.match_detections(image, detections, catalogue)
+            matching_error = None
+        except MatchingUnavailable as error:
             matches = [
                 {
                     "detection_index": index,
                     "detector_label": str(detection.get("label", "")),
                     "detector_confidence": detection.get("confidence"),
                     "box": detection.get("box"),
-                    "image_width": detection.get("image_width", 0),
-                    "image_height": detection.get("image_height", 0),
+                    "image_width": detection.get("image_width", image.width),
+                    "image_height": detection.get("image_height", image.height),
                     "candidates": [],
                     "top_similarity": None,
                     "top_margin": None,
                     "accepted_sku": None,
                     "status": "Unknown / Needs Review",
-                    "detail": matching_error,
+                    "detail": str(error),
                     "similarity_is_probability": False,
                 }
                 for index, detection in enumerate(detections)
             ]
-        else:
-            try:
-                matches = self.recognizer.match_detections(image, detections, catalogue)
-                matching_error = None
-            except MatchingUnavailable as error:
-                matches = [
-                    {
-                        "detection_index": index,
-                        "detector_label": str(detection.get("label", "")),
-                        "detector_confidence": detection.get("confidence"),
-                        "box": detection.get("box"),
-                        "image_width": detection.get("image_width", image.width if image else 0),
-                        "image_height": detection.get("image_height", image.height if image else 0),
-                        "candidates": [],
-                        "top_similarity": None,
-                        "top_margin": None,
-                        "accepted_sku": None,
-                        "status": "Unknown / Needs Review",
-                        "detail": str(error),
-                        "similarity_is_probability": False,
-                    }
-                    for index, detection in enumerate(detections)
-                ]
-                matching_error = str(error)
+            matching_error = str(error)
 
         comparison = compare_planogram(planogram, matches, self.slot_mapper)
         slots = [finding for finding in comparison["findings"] if "slot" in finding]
         unmatched = [finding for finding in comparison["findings"] if "slot" not in finding]
-        mapping_trusted = bool(getattr(self.slot_mapper, "trusted", False))
+        mapping_trusted = False
         assumptions = [
             "Equal-grid mapping estimates horizontal row bands and left-to-right slots from bbox centers.",
             "This mapping is not perspective-aware or calibrated against shelf boundaries.",
