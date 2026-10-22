@@ -17,9 +17,10 @@ PRICE_PATTERN = re.compile(
 )
 
 
-# Shelf tags often print the rupee sign as a symbol OCR drops ("'85"); such bare numbers are
-# accepted only when the text sits on a yellow label (see _on_yellow_label).
-BARE_NUMBER = re.compile(r"[₹'`’]?\s*(\d{2,5})")
+# Shelf tags often print the rupee sign as a symbol OCR drops or misreads ("'85", "天119" and
+# "元69" from the Chinese-trained PP-OCR model); such bare numbers are accepted only when the
+# text sits on a yellow label (see _on_yellow_label).
+BARE_NUMBER = re.compile(r"[₹'`’天元¥]?\s*(\d{2,5})")
 
 
 def _on_yellow_label(region) -> bool:
@@ -123,6 +124,14 @@ class PriceTagReader:
         combined_price = parse_price(raw_text)
         if combined_price is not None:
             prices.add(combined_price)
+        rule = "currency marker or two decimals"
+        if not prices and _on_yellow_label(crop_array):
+            # Same rule as read_prices: the rupee sign is often misread, so a bare number counts
+            # only on a yellow tag, and only when it is the single number in the detected tag.
+            bare = {int(match.group(1)) for text, _score in accepted if (match := BARE_NUMBER.fullmatch(text))}
+            bare.discard(0)
+            if len(bare) == 1:
+                prices, rule = {float(bare.pop())}, "bare number on yellow label (inferred)"
         if len(prices) > 1:
             status, price = "ambiguous", None
         elif len(prices) == 1:
@@ -137,6 +146,7 @@ class PriceTagReader:
             "price": price,
             "ocr_confidence": round(max(scores), 4) if scores else None,
             "ocr_status": status,
+            "ocr_rule": rule if price is not None else None,
         }
 
 

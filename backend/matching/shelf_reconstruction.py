@@ -383,6 +383,12 @@ def compare_expected_to_detected(
             )
             if expected_identity in uncertain_slots:
                 accepted_statuses.discard("EXPECTED EMPTY SLOT")
+            # The slot audit is the authoritative result (it also drives the score). When it is left
+            # for review (unidentified objects, void/product contradiction, unconfirmed absence), a
+            # per-detection finding or a void cell must not confirm a different status here.
+            audit_needs_review = bool(layout_trusted and audit and audit.get("status") == "Needs Review")
+            if audit_needs_review:
+                accepted_statuses = set()
             if layout_trusted and accepted_statuses:
                 priority = ["WRONG PRODUCT / MISPLACED", "UNEXPECTED PRODUCT", "MATCH", "EXPECTED EMPTY SLOT"]
                 confirmed_status = next(status for status in priority if status in accepted_statuses)
@@ -391,14 +397,16 @@ def compare_expected_to_detected(
             elif layout_trusted and audit and audit.get("status") == "Empty Slot" and not expected_sku:
                 # An unassigned planogram cell is expected empty; this says nothing about a visible void.
                 confirmed_status = "EXPECTED EMPTY SLOT"
-            elif layout_trusted and audit and audit.get("status") in {"Misplaced", "Unexpected Product"}:
-                # These statuses require a mapped product, unlike an absence-based missing result.
+            elif layout_trusted and audit and audit.get("status") in {"Misplaced", "Unexpected Product", "Missing Expected Product"}:
+                # Misplaced/Unexpected require a mapped product; under the trusted layout the slot audit
+                # reports Missing only when a void detection confirms the gap.
                 mapped_status = {
                     "Misplaced": "WRONG PRODUCT / MISPLACED", "Unexpected Product": "UNEXPECTED PRODUCT",
+                    "Missing Expected Product": "MISSING PRODUCT",
                 }.get(audit.get("status"))
                 if mapped_status:
                     confirmed_status = mapped_status
-            if layout_trusted and not confirmed_status and candidate and candidate.get("kind") == "void":
+            if layout_trusted and not audit_needs_review and not confirmed_status and candidate and candidate.get("kind") == "void":
                 confirmed_status = "MISSING PRODUCT" if expected_sku else "VOID / EMPTY SLOT"
                 audit = {"detail": "A void-model detection maps to this slot under the trusted layout."}
             suggested_status = "Needs Review"

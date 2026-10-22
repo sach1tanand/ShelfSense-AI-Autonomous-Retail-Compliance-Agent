@@ -366,8 +366,8 @@ class ProductMatchingTests(unittest.TestCase):
             # Check report page renders SKU Recognition table
             detail_res = client.get(res.location)
             self.assertEqual(detail_res.status_code, 200)
-            self.assertIn(b"SKU RECOGNITION", detail_res.data)
-            self.assertIn(b"Crop-to-SKU Candidates", detail_res.data)
+            self.assertIn(b"Check what the matcher decided", detail_res.data)
+            self.assertIn(b"rp-cand", detail_res.data)  # ranked SKU candidates offered for review
 
 
 if __name__ == "__main__":

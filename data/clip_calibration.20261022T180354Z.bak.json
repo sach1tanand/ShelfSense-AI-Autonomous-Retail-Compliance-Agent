@@ -1,0 +1,22 @@
+{
+  "status": "calibrated_on_validation_set",
+  "model_id": "torchvision-mobilenet_v3_large-imagenet1k_v2",
+  "threshold": 0.66,
+  "minimum_margin": 0.045,
+  "target_precision": 0.98,
+  "detection_confidence": 0.35,
+  "metrics": {
+    "threshold": 0.66,
+    "minimum_margin": 0.045,
+    "accepted": 125,
+    "correct": 123,
+    "precision": 0.984,
+    "known_coverage": 0.8311,
+    "unknown_rejection": 0.9688,
+    "validation_crops": 180,
+    "known_crops": 148,
+    "unknown_crops": 32
+  },
+  "validation_source": "data/test_set/validation (synthetic shelves, products disjoint from the test split)",
+  "created_at": "2026-10-21T19:10:54.845294+00:00"
+}

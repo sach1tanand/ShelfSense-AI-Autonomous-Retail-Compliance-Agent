@@ -131,6 +131,19 @@ class AuditWorkflowTests(unittest.TestCase):
             self.assertEqual(self.client.get(route).status_code, 200, route)
         self.assertEqual(self.client.get("/reports/abc123/image").status_code, 404)
 
+    def test_legacy_whole_image_price_tags_render_on_dashboard(self):
+        self.results_dir.mkdir()
+        (self.results_dir / "def456.json").write_text(json.dumps({
+            "created_at": "Oct 21, 2026", "image_name": "old.jpg", "compliance": [], "detections": [],
+            "price_audit": {"requested": True, "tags": [
+                {"text": "₹ 20.00", "price": 20.0, "confidence": 0.9, "box": [1, 2, 30, 40], "sku": "", "association": "unassigned"},
+            ]},
+        }), encoding="utf-8")
+        web_app._reports.update(web_app._load_saved_reports(self.results_dir))
+        for route in ("/", "/reports/def456"):
+            self.assertEqual(self.client.get(route).status_code, 200, route)
+        self.assertIn("₹20.00".encode(), self.client.get("/").data)
+
     def test_example_image_can_be_analyzed_without_upload(self):
         if not SAMPLE_IMAGE_PATH.is_file():
             self.skipTest("sample image missing")

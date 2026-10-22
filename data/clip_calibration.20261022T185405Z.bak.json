@@ -1,0 +1,50 @@
+{
+  "status": "calibrated_on_validation_set",
+  "model_id": "torchvision-mobilenet_v3_large-imagenet1k_v2",
+  "threshold": 0.62,
+  "minimum_margin": 0.055,
+  "target_precision": 0.98,
+  "detection_confidence": 0.35,
+  "detector_model": {
+    "file": "shelfsense-product-detector.pt",
+    "size": 31772583,
+    "sha256": "0e91c0965d475519283aa461c9aa6989b71cd815eeec15c6c6cfb357604315bf"
+  },
+  "metrics": {
+    "threshold": 0.62,
+    "minimum_margin": 0.055,
+    "accepted": 114,
+    "correct": 112,
+    "precision": 0.9825,
+    "precision_wilson_lower_95": 0.9383,
+    "known_coverage": 0.8889,
+    "unknown_accepted": 2,
+    "unknown_rejection": 0.9655,
+    "validation_crops": 184,
+    "known_crops": 126,
+    "unknown_crops": 58,
+    "warnings": [
+      "The 95% lower bound of the measured precision is 0.938, below the 98% target; the target is met on this sample, not demonstrated statistically."
+    ]
+  },
+  "provenance": {
+    "gallery_sha256": "f933336910695f9c6da3a23ec17ee1ce8eff8c25714fa562aad657a228adfcde",
+    "gallery_size": 180,
+    "holdout_excluded": 20,
+    "ground_truth_sha256": "2159fba602cc93816422328e64fef38d083afc0066fcbbe9311060ac79ddfd60",
+    "sample_counts": {
+      "detections": 184,
+      "duplicates": 0,
+      "known": 126,
+      "background": 1,
+      "holdout": 57,
+      "facings": 210
+    }
+  },
+  "validation_source": "data/test_set/validation (synthetic shelves, products disjoint from the test split)",
+  "limitations": [
+    "Calibrated on synthetic shelf renders of catalogue photos; real-store precision is not measured.",
+    "Unknown-product rejection is measured on holdout catalogue products and background boxes only."
+  ],
+  "created_at": "2026-10-22T18:03:54.675365+00:00"
+}

@@ -58,20 +58,26 @@ To use a different framework entirely, add a class with the same `detect(image_p
 
 Each detected box is cropped and compared with the 200 catalogue images in `data/product_images/` using ImageNet-pretrained MobileNetV3-Large features (`SHELFSENSE_MATCHER`, default `torchvision-mobilenet_v3_large-imagenet1k_v2`; weights 21 MB, BSD-3, downloaded once by torchvision). A crop is accepted as a SKU only above the threshold and top-2 margin in `data/clip_calibration.json`; otherwise it stays `Needs Review`. `SHELFSENSE_MATCHER=none` disables matching; a CLIP model id works after `pip install -r requirements-matching.txt` (recalibrate after switching).
 
+The calibration file records the matcher id and a SHA-256 of the detector checkpoint that produced its crops. At start-up it is validated: a missing, unreadable or out-of-range file, or one made for a different matcher, applies **no** threshold (every crop stays `Needs Review`) and the report says why and how to fix it. A file made with a different detector checkpoint is still applied but reported as *stale*. Recalibrate after changing the detector, matcher, catalogue images or planogram.
+
 ### Slot mapping
 
 Slot findings (Compliant, Missing Expected Product, Misplaced, Unexpected Product) are only confirmed when the photo is declared to follow the **calibrated layout**: a fixed-camera front view where the planogram rows and slots are equal bands of the image ("Calibrated shelf layout" checkbox, or `calibrated_layout=on` in the API). Otherwise slots stay `Needs Review`. A slot holding an object the matcher could not identify is never confirmed.
 
+`Missing Expected Product` needs positive evidence: a void detection covering at least half of the slot (no products found), or any void in the slot when some facings were found. Fewer detected products without such a void stays `Needs Review`, because the detector may have missed them. A void that overlaps a slot whose expected facings were all identified is contradictory and stays `Needs Review`.
+
 ### Price OCR
 
-With "Price label verification" ticked, RapidOCR (PP-OCR on ONNX Runtime, Apache-2.0) reads the whole image. Only price-like text is kept: a ₹/Rs/MRP marker or a number with two decimals. Each tag is linked to the slot's planogram SKU (calibrated layout) or to the identified product directly above it (heuristic), then compared with the catalogue `expected_price`. Products without a linked tag stay `Unverified`. The 13 planogram SKUs carry demo prices in `data/catalogue.csv`: replace them with your store's prices.
+With "Price label verification" ticked, RapidOCR (PP-OCR on ONNX Runtime, Apache-2.0) reads each tag found by the price-tag model, then the whole image for tags the model missed (text printed on a detected product is ignored). Only price-like text is kept: a ₹/Rs/MRP marker or a number with two decimals, or a single bare number on a yellow tag (the ₹ sign is often misread). Each tag is linked to the identified product in its slot (calibrated layout) or to the identified product directly above it (heuristic), then compared with the catalogue `expected_price`. A tag stays unlinked when its slot holds different identified products, a product other than the slot's planogram SKU, or two different price readings. Products without a linked tag stay `Unverified`; price status never changes a product's identity or placement status. Planogram SKUs need an `expected_price` in `data/catalogue.csv` to be verified (two of them currently have none).
 
 ### Labelled test set
 
 `data/test_set/` holds synthetic shelf scenes built from the catalogue images, with exact ground truth:
 
-- `test/`: 6 scenes on the planogram grid (compliant, misplaced, missing, unexpected, price mismatch, mixed), using the 13 planogram SKUs plus 3 distractors
+- `test/`: 6 scenes on the planogram grid (compliant, misplaced, missing, unexpected, price mismatch, mixed), using the planogram SKUs plus 3 distractors
 - `validation/`: 8 scenes using 80 *other* products (60 known, 20 removed from the gallery as "unknown"). These are used only to calibrate the match threshold.
+
+`ground_truth.json` stores SHA-256 hashes of the planogram and catalogue it was built from. Calibration and evaluation refuse to run when the planogram changed or the SKU splits overlap: rebuild the test set first. Calibration labels crops one-to-one with ground truth (duplicate boxes are excluded), backs up the previous `clip_calibration.json`, and reports the 95% lower bound of the measured precision. Evaluation matches detections to facings one-to-one and counts failed audits, missing and unexpected slot rows as failures.
 
 ```powershell
 .\.venv\Scripts\python.exe -m tools.build_test_set          # regenerate scenes + ground_truth.json
@@ -79,6 +85,16 @@ With "Price label verification" ticked, RapidOCR (PP-OCR on ONNX Runtime, Apache
 .\.venv\Scripts\python.exe -m tools.evaluate_test_set       # score the full pipeline on the test scenes
 .\.venv\Scripts\python.exe -m tools.evaluate_test_set --save  # also add the audits to the Reports history
 ```
+
+### Match threshold and product review
+
+**Settings → Product Matching** sets the similarity a crop needs before it is named (default **0.50**; the calibrated value is shown as a marker) and the minimum margin over the second-best product. Each analysis can override the threshold on **Upload & Analyze**, and every report records the value it used. While you drag the bar, Settings shows the precision measured on the synthetic validation set and, once you have reviewed products, how many of the products named at that threshold your reviews confirmed.
+
+On the report, the **Product review** grid shows every detected product with its crop, best guess, similarity and the reason it was or was not identified. **✓ Correct** confirms the product, **✗ Wrong** lets you pick the right catalogue product or add a new one (the crop becomes its catalogue image), and **⊘ Not item** marks signs, notices and shelf parts. Verdicts are stored in `data/feedback/`, and each reviewed crop becomes an extra reference image for its product (or a negative example). **Re-analyze** runs the same photo again with all saved reviews. Calibration (`tools.calibrate_matching`) ignores review crops, so it keeps measuring the catalogue itself.
+
+### Why is a result Needs Review?
+
+Every saved report has `pipeline_diagnostics`: one record per detection (box, crop size, top candidates, similarity, margin, thresholds, slot, expected SKU, final statuses) ending in a `reason_code` such as `below_threshold` (probably not in the catalogue), `low_margin`, `no_calibration`, `layout_untrusted`, `unidentified_objects_in_slot`, `absence_not_confirmed` or `void_conflicts_with_products`. `scene.needs_review_causes` counts the causes per slot and `scene.issues` names scene-level problems (stale calibration, no catalogue matches, price tags not detected); those are also added to the report's limitations. A photo of products that are not in the catalogue, or of a shelf that does not follow the saved planogram, is expected to be mostly `Needs Review`.
 
 The test scenes also appear as buttons on **Upload & Analyze**. They are synthetic: accuracy on real store photos will be lower, and real photos need the calibrated-layout declaration to be true before slot findings mean anything.
 

@@ -21,8 +21,11 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
+from backend.matching.calibration import file_fingerprint, load_runtime_calibration
+from backend.matching.diagnostics import build_pipeline_diagnostics
 from backend.matching.pipeline import ProductMatchingPipeline
 from backend.matching.detections import suppress_duplicate_detections
+from backend.matching.feedback import NOT_PRODUCT_SKU, feedback_accuracy, load_feedback, record_feedback
 from backend.matching.shelf_mapper import CoordinateShelfMapper
 from backend.matching.shelf_reconstruction import compare_expected_to_detected, reconstruct_detected_planogram
 from backend.matching.storage import save_audit_result
@@ -46,7 +49,7 @@ from config.settings import (
 from src.detector import (
     DetectorUnavailable, annotate_image, detect_price_tags_and_voids, detect_products, detector_status, get_detector,
 )
-from src.ocr import OcrUnavailable, read_price_crop
+from src.ocr import OcrUnavailable, read_price_crop, read_price_tags
 from src.planogram import evaluate_planogram, validate_planogram
 from src.price_checker import check_prices
 from src.report import build_report
@@ -62,7 +65,8 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 _reports: dict[str, dict] = {}
 _detect_results: dict[str, dict] = {}
-_matching_pipelines: dict[tuple[str, str], ProductMatchingPipeline] = {}
+_matching_pipelines: dict[tuple[str, str, str], ProductMatchingPipeline] = {}
+_detector_fingerprints: dict[tuple[str, int, int], dict | None] = {}
 REPORT_SCHEMA_VERSION = 3
 CATALOGUE_PATH = DATA_DIR / "catalogue.csv"
 SETTINGS_PATH = ROOT_DIR / "config" / "user_settings.json"
@@ -155,16 +159,31 @@ def _report_export_rows(report: dict) -> list[dict]:
     return rows
 
 
+def _detector_fingerprint() -> dict | None:
+    """Fingerprint of the active product-detector checkpoint, hashed once per file version."""
+    path = Path(MODEL_PATH)
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    key = (str(path.resolve()), stat.st_size, stat.st_mtime_ns)
+    if key not in _detector_fingerprints:
+        _detector_fingerprints[key] = file_fingerprint(path)
+    return _detector_fingerprints[key]
+
+
 def _get_matching_pipeline() -> ProductMatchingPipeline | None:
     """Return the SKU-matching pipeline for the configured matcher, or None when disabled."""
     if MATCHER_MODEL_ID.casefold() == "none":
         return None
-    key = (str(DATA_DIR), MATCHER_MODEL_ID)
+    detector = _detector_fingerprint()
+    key = (str(DATA_DIR), MATCHER_MODEL_ID, (detector or {}).get("sha256", ""))
     if key not in _matching_pipelines:
         _matching_pipelines[key] = ProductMatchingPipeline(
             data_dir=DATA_DIR,
             model_id=MATCHER_MODEL_ID,
             top_k=int(os.getenv("SHELFSENSE_MATCH_TOP_K", "5")),
+            detector_fingerprint=detector,
         )
     return _matching_pipelines[key]
 
@@ -184,6 +203,9 @@ def _load_settings() -> dict:
         "shelf_gap_detection": True,
         "low_stock_alerts": True,
         "low_stock_threshold": 2,
+        # Product-match similarity threshold chosen by the operator; None margin = calibrated margin.
+        "match_threshold": DEFAULT_MATCH_THRESHOLD,
+        "match_margin": None,
     }
     if SETTINGS_PATH.exists():
         try:
@@ -191,6 +213,40 @@ def _load_settings() -> dict:
         except (json.JSONDecodeError, OSError):
             pass
     return defaults
+
+
+DEFAULT_MATCH_THRESHOLD = 0.50
+FALLBACK_MATCH_MARGIN = 0.05
+MATCH_THRESHOLD_RANGE = (0.30, 0.95)
+MATCH_MARGIN_RANGE = (0.0, 0.20)
+
+
+def _calibrated_match_values() -> dict:
+    """The validated calibration for the active matcher: threshold, margin, curve (None when unusable)."""
+    calibration = load_runtime_calibration(DATA_DIR / "clip_calibration.json", MATCHER_MODEL_ID)
+    payload = calibration["payload"]
+    return {
+        "threshold": calibration["threshold"], "margin": calibration["minimum_margin"], "state": calibration["state"],
+        "curve": payload.get("curve", []) if calibration["threshold"] is not None else [],
+        "precision": (payload.get("metrics") or {}).get("precision"),
+    }
+
+
+def _match_settings(settings: dict, form=None) -> tuple[float, float]:
+    """Threshold and margin for one analysis: the form's values when given, else the saved settings."""
+    form = form or {}
+    try:
+        threshold = float(form.get("match_threshold") or settings.get("match_threshold") or DEFAULT_MATCH_THRESHOLD)
+        margin_value = form.get("match_margin") or settings.get("match_margin")
+        margin = float(margin_value) if margin_value not in (None, "") else (
+            _calibrated_match_values()["margin"] or FALLBACK_MATCH_MARGIN)
+    except (TypeError, ValueError) as error:
+        raise AuditError("The product match threshold must be a number.") from error
+    if not MATCH_THRESHOLD_RANGE[0] <= threshold <= MATCH_THRESHOLD_RANGE[1]:
+        raise AuditError(f"Product match threshold must be between {MATCH_THRESHOLD_RANGE[0]:.2f} and {MATCH_THRESHOLD_RANGE[1]:.2f}.")
+    if not MATCH_MARGIN_RANGE[0] <= margin <= MATCH_MARGIN_RANGE[1]:
+        raise AuditError(f"Product match margin must be between {MATCH_MARGIN_RANGE[0]:.2f} and {MATCH_MARGIN_RANGE[1]:.2f}.")
+    return round(threshold, 3), round(margin, 3)
 
 
 def _save_csv(path: Path, rows: list[dict]) -> None:
@@ -449,6 +505,12 @@ def _incoming_image(files, form) -> tuple[object, str]:
         if not _allowed_file(image.filename):
             raise AuditError("Upload a PNG, JPG, JPEG, or WEBP image.")
         return image.stream, secure_filename(image.filename) or "shelf.jpg"
+    reanalyze = form.get("reanalyze_image")
+    if reanalyze:
+        path = _uploaded_path(reanalyze)
+        if path is None:
+            raise AuditError("The original image of that report is no longer stored, so it cannot be re-analyzed.")
+        return path, form.get("reanalyze_name") or path.name
     test_image = form.get("test_image")
     if test_image:
         path = _test_images().get(test_image)
@@ -485,7 +547,11 @@ def _identify_detections(detections: list[dict], matches: list[dict], planogram:
             "detection_index": source_index,
             "sku": match.get("accepted_sku") or "",
             "match_status": match.get("status", "Unknown / Needs Review"),
+            "match_reason_code": match.get("reason_code", "no_match_result"),
             "slot_identity": list(identity) if identity else None,
+            "slot_mapping_status": mapping.get("status"),
+            "slot_mapping_detail": mapping.get("detail", ""),
+            "slot_mapping_confidence": mapping.get("confidence"),
         })
     return identified
 
@@ -504,29 +570,165 @@ def _downgrade_slots_with_unidentified(slots: list[dict], identified: list[dict]
                 f"{unresolved[key]} object(s) in this slot could not be identified above the calibrated match "
                 f"threshold, so the slot is not confirmed (was: {slot['status']})."
             )
-            slot["status"] = "Needs Review"
+            slot.update(status="Needs Review", reason_code="unidentified_objects_in_slot")
         elif unresolved.get(key):
-            slot.update(status="Needs Review", detail=f"{unresolved[key]} unidentified object(s) in an intentionally empty slot.")
+            slot.update(status="Needs Review", reason_code="unidentified_objects_in_slot",
+                        detail=f"{unresolved[key]} unidentified object(s) in an intentionally empty slot.")
+
+
+MIN_VOID_COVERAGE_FOR_ABSENCE = 0.5
+
+
+def _void_slot_coverage(slot_voids: list[dict], slot_number: str, slot_count: int) -> float:
+    """Share of an equal-grid slot's width covered by the union of its void boxes (0..1)."""
+    try:
+        index = int(slot_number) - 1
+    except ValueError:
+        return 0.0
+    if not slot_voids or slot_count <= 0 or not 0 <= index < slot_count:
+        return 0.0
+    width = float(slot_voids[0].get("image_width") or 0)
+    if width <= 0:
+        return 0.0
+    left, right = index * width / slot_count, (index + 1) * width / slot_count
+    spans = sorted((max(left, float(item["box"][0])), min(right, float(item["box"][2]))) for item in slot_voids)
+    covered, cursor = 0.0, left
+    for start, end in spans:
+        start = max(start, cursor)
+        if end > start:
+            covered += end - start
+            cursor = end
+    return covered / (right - left)
 
 
 def _downgrade_unsupported_slot_statuses(slots: list[dict], voids: list[dict], layout_trusted: bool) -> None:
-    """Require positive slot evidence before reporting a planogram result as confirmed."""
+    """Require positive slot evidence before reporting a planogram result as confirmed.
+
+    A void box is positive evidence of an empty area, so it can confirm an absence or a facing
+    shortfall. It never overrides identified products: a slot whose expected facings were all
+    identified is contradicted, not emptied, by a void box, and stays for review. Absence
+    without a void box is not confirmed, because the detector may simply have missed products.
+    """
     if not layout_trusted:
         return
-    void_identities = {
-        tuple(str(part) for part in item.get("slot_identity", []))
-        for item in voids if item.get("slot_identity")
-    }
+    slots_per_row: dict[tuple[str, str], int] = {}
+    for slot in slots:
+        key = (str(slot.get("shelf", "")), str(slot.get("row", "")))
+        slots_per_row[key] = slots_per_row.get(key, 0) + 1
     for slot in slots:
         identity = (str(slot.get("shelf", "")), str(slot.get("row", "")), str(slot.get("slot", slot.get("position", ""))))
-        exact_void = any(len(value) >= 5 and value[-3:] == identity for value in void_identities)
-        if slot.get("sku") and exact_void:
-            slot.update(status="Missing Expected Product", detail="A void detection maps to this assigned slot.")
-        elif slot.get("status") == "Missing Expected Product":
+        slot_voids = [
+            item for item in voids
+            if item.get("slot_identity") and len(item["slot_identity"]) >= 5
+            and tuple(str(part) for part in item["slot_identity"][-3:]) == identity
+        ]
+        exact_void = bool(slot_voids)
+        status = slot.get("status")
+        if not slot.get("sku"):
+            continue
+        if status == "Missing Expected Product":
+            observed = slot.get("observed") or 0
+            coverage = _void_slot_coverage(slot_voids, identity[2], slots_per_row.get(identity[:2], 0))
+            if exact_void and (observed or coverage >= MIN_VOID_COVERAGE_FOR_ABSENCE):
+                slot.update(
+                    reason_code="void_confirms_absence" if not observed else "void_confirms_facing_shortfall",
+                    detail=(f"Void detections cover {coverage:.0%} of this assigned slot and no product was mapped here."
+                            if not observed else
+                            f"A void detection maps to this slot and only {observed} of {slot.get('expected')} "
+                            "expected facings were identified."),
+                )
+            elif exact_void:
+                slot.update(
+                    status="Needs Review", reason_code="absence_not_confirmed",
+                    detail=(f"No product was mapped here, but void detections cover only {coverage:.0%} of the slot; "
+                            "a narrow void can sit beside a product the detector missed."),
+                )
+            else:
+                slot.update(
+                    status="Needs Review", reason_code="absence_not_confirmed",
+                    detail=("Fewer products were mapped here than expected, but no void detection confirms the gap; "
+                            "the detector may have missed products."),
+                )
+        elif exact_void and status == "Compliant":
             slot.update(
-                status="Needs Review",
-                detail="The current detections do not provide enough supported evidence to confirm this slot status.",
+                status="Needs Review", reason_code="void_conflicts_with_products",
+                detail=("All expected facings were identified here, but a void detection also maps to this slot; "
+                        "the evidence is contradictory."),
             )
+        elif exact_void:
+            slot["detail"] = f"{slot.get('detail', '')} A void detection also maps to this slot.".strip()
+
+
+def _read_shelf_prices(stored_path: Path, auxiliary_audit: dict, product_detections: list[dict],
+                       min_confidence: float, report_id: str) -> dict:
+    """OCR price-tag-model crops, then add whole-image OCR readings the tag model did not cover.
+
+    The tag model misses tags (it finds none on many images), so whole-image price text that is
+    not inside a detected tag and not printed on a detected product is kept as extra evidence
+    instead of leaving those prices silently unverified.
+    """
+    result: dict = {"engine": "rapidocr-onnxruntime", "tags": []}
+    model_tags = auxiliary_audit.get("price_tags", [])
+    for detection in model_tags:
+        tag = {**detection, "text": "", "raw_ocr_text": "", "price": None, "parsed_price": None,
+               "ocr_confidence": None, "ocr_status": "unreadable", "sku": "", "slot": None,
+               "association": "Needs Review", "tag_source": "price_tag_model"}
+        try:
+            ocr = read_price_crop(stored_path, detection["box"], min_confidence)
+            tag.update(ocr)
+            tag["text"] = ocr["raw_ocr_text"]
+            tag["parsed_price"] = ocr["price"]
+        except OcrUnavailable as error:
+            result["error"] = str(error)
+            tag["ocr_status"] = "unavailable"
+        except Exception as error:
+            logger.exception("OCR failed for a detected price tag in report %s", report_id)
+            result.setdefault("errors", []).append(str(error))
+            tag["ocr_status"] = "error"
+        result["tags"].append(tag)
+
+    def inside(reading: dict, boxes: list) -> bool:
+        center_x = (reading["box"][0] + reading["box"][2]) / 2
+        center_y = (reading["box"][1] + reading["box"][3]) / 2
+        return any(box[0] <= center_x <= box[2] and box[1] <= center_y <= box[3] for box in boxes)
+
+    tag_boxes = [tag["box"] for tag in model_tags if len(tag.get("box") or []) == 4]
+    product_boxes = [detection["box"] for detection in product_detections if len(detection.get("box") or []) == 4]
+    supplemented = 0
+    if not result.get("error"):
+        try:
+            for reading in read_price_tags(stored_path, min_confidence):
+                if inside(reading, tag_boxes):
+                    continue  # already read from the tag model's crop
+                if inside(reading, product_boxes):
+                    # Price-like text printed on a detected product's packaging is not a shelf tag.
+                    result["readings_on_products"] = result.get("readings_on_products", 0) + 1
+                    continue
+                supplemented += 1
+                result["tags"].append({
+                    "label": "price_tag", "box": reading["box"], "confidence": reading["confidence"],
+                    "text": reading["text"], "raw_ocr_text": reading["text"], "price": reading["price"],
+                    "parsed_price": reading["price"], "ocr_confidence": reading["confidence"],
+                    "ocr_status": "read", "ocr_rule": reading["rule"], "tag_source": "full_image_ocr",
+                    "sku": "", "slot": None, "association": "Needs Review",
+                })
+        except OcrUnavailable as error:
+            result["error"] = str(error)
+        except Exception as error:
+            logger.exception("Whole-image price OCR failed in report %s", report_id)
+            result.setdefault("errors", []).append(f"Whole-image price OCR failed: {error}")
+    result["tag_source"] = (
+        "price_tag_model+full_image_ocr" if model_tags and supplemented
+        else "price_tag_model" if model_tags else "full_image_ocr"
+    )
+    if not model_tags:
+        result["tag_source_reason"] = (
+            f"Price-tag detector unavailable: {auxiliary_audit['error']}" if auxiliary_audit.get("error")
+            else "The price-tag detector found no tags in this image."
+        )
+    if result.get("errors") and not result.get("error"):
+        result["error"] = "OCR failed for one or more price readings."
+    return result
 
 
 def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list[dict], slot_mapper,
@@ -557,13 +759,20 @@ def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list
                 ))
                 if candidates:
                     best = candidates[0]
-                    if len(candidates) > 1:
+                    if len(candidates) > 1 and candidates[1]["sku"] != best["sku"]:
+                        # Equidistant facings of the same SKU do not make the tag's product ambiguous.
                         first_distance = abs((best["box"][0] + best["box"][2]) / 2 - tag_center)
                         second_distance = abs((candidates[1]["box"][0] + candidates[1]["box"][2]) / 2 - tag_center)
                         if second_distance - first_distance <= max(4, 0.02 * image_width):
                             tag.update(slot=f"R{row['row']}S{row['slot']}",
                                        association="Needs Review (ambiguous product in mapped slot)")
                             continue
+                    if best["sku"] != row["sku"]:
+                        # Shelf tags belong to the planned slot; under a misplaced product it is unclear
+                        # whether the tag prices the planned SKU or the visible one.
+                        tag.update(slot=f"R{row['row']}S{row['slot']}",
+                                   association="Needs Review (identified product differs from the slot's planogram SKU)")
+                        continue
                     detection_index = int(best.get("_source_detection_index", best.get("detection_index", -1)))
                     used_detections.add(detection_index)
                     tag.update(sku=best["sku"], slot=f"R{row['row']}S{row['slot']}",
@@ -594,6 +803,15 @@ def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list
                     used_detections.add(source_index)
                     tag.update(sku=nearest["sku"], associated_detection_index=source_index,
                                association="nearest identified product above (heuristic)")
+    # Two different prices read in one mapped slot contradict each other; neither is linked.
+    prices_by_slot: dict[str, set[float]] = {}
+    for tag in tags:
+        if tag.get("slot") and tag.get("price") is not None:
+            prices_by_slot.setdefault(tag["slot"], set()).add(round(float(tag["price"]), 2))
+    for tag in tags:
+        if tag.get("slot") and len(prices_by_slot.get(tag["slot"], ())) > 1:
+            tag.pop("associated_detection_index", None)
+            tag.update(sku="", association="Needs Review (conflicting price readings in slot)")
     return tags
 
 
@@ -687,13 +905,18 @@ def _audit_limitations(model_info: dict, matching_audit: dict, layout_trusted: b
     calibration = matching_audit.get("calibration", {})
     if matching_audit.get("matching_error"):
         limitations.append(f"SKU matching is unavailable: {matching_audit['matching_error']}")
-    elif calibration.get("calibration_status") != "calibrated_on_validation_set":
-        limitations.append("SKU candidates are advisory: no validation-calibrated acceptance threshold is configured.")
+    elif calibration.get("acceptance_threshold") is None:
+        issues = " ".join(issue["message"] for issue in calibration.get("issues", []))
+        limitations.append(
+            "SKU candidates are advisory: no valid validation-calibrated acceptance threshold is configured."
+            + (f" {issues}" if issues else "")
+        )
     else:
         accepted = sum(bool(match.get("accepted_sku")) for match in matching_audit.get("matches", []))
+        source = "operator-set" if calibration.get("threshold_source") == "operator" else "calibrated"
         limitations.append(
             f"SKU matching ({calibration.get('model_id')}) accepted {accepted} of {len(matching_audit.get('matches', []))} "
-            f"crops at the calibrated threshold {calibration.get('acceptance_threshold')} / margin "
+            f"crops at the {source} threshold {calibration.get('acceptance_threshold')} / margin "
             f"{calibration.get('minimum_margin')}; the rest stay Needs Review. Calibration used synthetic shelves, "
             "so accuracy on real photos may be lower."
         )
@@ -709,9 +932,11 @@ def _audit_limitations(model_info: dict, matching_audit: dict, layout_trusted: b
     elif price_audit.get("error"):
         limitations.append(f"Price OCR is unavailable: {price_audit['error']}")
     else:
-        assigned = sum(bool(tag.get("sku")) for tag in price_audit.get("tags", []))
+        tags = price_audit.get("tags", [])
+        assigned = sum(bool(tag.get("sku")) for tag in tags)
+        read = sum(tag.get("ocr_status") == "read" for tag in tags)
         limitations.append(
-            f"OCR ({price_audit.get('engine')}) read {len(price_audit.get('tags', []))} price tag(s); {assigned} were linked "
+            f"OCR ({price_audit.get('engine')}) read a price from {read} of {len(tags)} price tag(s); {assigned} were linked "
             "to a SKU. Prices without a linked tag remain Unverified."
         )
     return limitations
@@ -722,6 +947,7 @@ def _run_audit(files, form) -> tuple[str, dict]:
     settings = _load_settings()
     source, display_name = _incoming_image(files, form)
     confidence = _parse_confidence(form)
+    match_threshold, match_margin = _match_settings(settings, form)
 
     all_catalogue = _read_catalogue()
     catalogue = [product for product in all_catalogue if product.get("active", "true").casefold() == "true"]
@@ -803,15 +1029,16 @@ def _run_audit(files, form) -> tuple[str, dict]:
             if mapping.get("slot_identity"):
                 void["slot_identity"] = list(mapping["slot_identity"])
                 void["slot_mapping_status"] = "calibrated location; review required"
-    pipeline = _get_matching_pipeline()
-    if pipeline is None:
-        matching_audit = {"matches": [], "findings": [], "matching_error": "SKU matching is disabled (SHELFSENSE_MATCHER=none)."}
-    else:
-        try:
-            matching_audit = pipeline.run(stored_path, unique_detections, catalogue, planogram, slot_mapper=slot_mapper)
-        except Exception as error:
-            logger.exception("SKU matching pipeline failed for report %s", report_id)
-            matching_audit = {"matches": [], "findings": [], "matching_error": f"Matching pipeline error: {error}"}
+    try:
+        pipeline = _get_matching_pipeline()
+        if pipeline is None:
+            matching_audit = {"matches": [], "findings": [], "matching_error": "SKU matching is disabled (SHELFSENSE_MATCHER=none)."}
+        else:
+            matching_audit = pipeline.run(stored_path, unique_detections, catalogue, planogram, slot_mapper=slot_mapper,
+                                          acceptance_threshold=match_threshold, minimum_margin=match_margin)
+    except Exception as error:
+        logger.exception("SKU matching pipeline failed for report %s", report_id)
+        matching_audit = {"matches": [], "findings": [], "matching_error": f"Matching pipeline error: {error}"}
     identified = _identify_detections(unique_detections, matching_audit.get("matches", []), planogram, slot_mapper)
     names_by_sku = {product["sku"]: product.get("name") or f"SKU {product['sku']}" for product in all_catalogue}
     identified_by_source = {item["_source_detection_index"]: item for item in identified}
@@ -823,7 +1050,10 @@ def _run_audit(files, form) -> tuple[str, dict]:
             detection["matched_sku"] = enriched["sku"]
             detection["product_name"] = names_by_sku.get(enriched["sku"], "") if enriched["sku"] else ""
             detection["match_status"] = enriched["match_status"]
+            detection["match_reason_code"] = enriched["match_reason_code"]
             detection["slot_identity"] = enriched["slot_identity"]
+            detection["slot_mapping_status"] = enriched["slot_mapping_status"]
+            detection["slot_mapping_detail"] = enriched["slot_mapping_detail"]
         elif source_index in duplicate_map:
             duplicate_of = duplicate_map[source_index]
             detection["duplicate_detection"] = True
@@ -839,30 +1069,13 @@ def _run_audit(files, form) -> tuple[str, dict]:
 
     price_audit: dict = {"requested": bool(form.get("price_check")) and bool(settings.get("price_verification", True)), "tags": []}
     if price_audit["requested"]:
-        price_audit["engine"] = "rapidocr-onnxruntime"
-        tags = []
-        for detection in auxiliary_audit.get("price_tags", []):
-            tag = {**detection, "text": "", "raw_ocr_text": "", "price": None, "parsed_price": None,
-                   "ocr_confidence": None, "ocr_status": "unreadable", "sku": "", "slot": None,
-                   "association": "Needs Review"}
-            try:
-                ocr = read_price_crop(stored_path, detection["box"], float(settings.get("price_confidence", 0.5)))
-                tag.update(ocr)
-                tag["text"] = ocr["raw_ocr_text"]
-                tag["parsed_price"] = ocr["price"]
-                if ocr["ocr_status"] == "read":
-                    _assign_price_tags([tag], planogram, identified, slot_mapper, image_width, image_height)
-            except OcrUnavailable as error:
-                price_audit["error"] = str(error)
-                tag["ocr_status"] = "unavailable"
-            except Exception as error:
-                logger.exception("OCR failed for a detected price tag in report %s", report_id)
-                price_audit.setdefault("errors", []).append(str(error))
-                tag["ocr_status"] = "error"
-            tags.append(tag)
-        price_audit["tags"] = tags
-        if price_audit.get("errors") and not price_audit.get("error"):
-            price_audit["error"] = "OCR failed for one or more detected price tags."
+        price_audit.update(_read_shelf_prices(
+            stored_path, auxiliary_audit, unique_detections, float(settings.get("price_confidence", 0.5)), report_id,
+        ))
+        # Assign all readable tags together so one product is linked to at most one tag and
+        # conflicting readings in one slot are detected.
+        _assign_price_tags([tag for tag in price_audit["tags"] if tag["ocr_status"] == "read"], planogram, identified,
+                           slot_mapper, image_width, image_height)
     else:
         price_audit["tags"] = [
             {**detection, "text": "", "raw_ocr_text": "", "price": None, "parsed_price": None,
@@ -948,6 +1161,10 @@ def _run_audit(files, form) -> tuple[str, dict]:
         planogram_name=form.get("planogram", settings["default_planogram"]).strip(),
         planogram_id=saved_planogram_id,
         confidence_threshold=confidence,
+        analysis_options={
+            "calibrated_layout": layout_requested, "price_check": bool(form.get("price_check")),
+            "match_threshold": match_threshold, "match_margin": match_margin,
+        },
         planogram_audit=planogram_audit,
         detected_planogram=detected_planogram,
         planogram_comparison=planogram_comparison,
@@ -983,6 +1200,21 @@ def _run_audit(files, form) -> tuple[str, dict]:
     if layout_validation.get("compatible") is False:
         report["limitations"].append(layout_validation["detail"])
     try:
+        diagnostics = build_pipeline_diagnostics(
+            detections=detections, matching_audit=matching_audit, compliance=compliance,
+            price_results=price_results, price_audit=price_audit, layout_trusted=layout_trusted,
+            layout_validation=layout_validation, catalogue_size=len(catalogue), planogram=planogram,
+        )
+        report["pipeline_diagnostics"] = diagnostics
+        report["limitations"].extend(
+            issue["message"] for issue in diagnostics["scene"]["issues"] if issue["message"] not in report["limitations"]
+        )
+        logger.info("Audit %s diagnostics: scene=%s detection_reasons=%s slot_reasons=%s", report_id,
+                    [issue["code"] for issue in diagnostics["scene"]["issues"]],
+                    diagnostics["reason_counts"]["detections"], diagnostics["reason_counts"]["slots"])
+    except Exception:
+        logger.exception("Could not build pipeline diagnostics for report %s", report_id)
+    try:
         save_audit_result(AUDIT_RESULTS_DIR, report_id, {key: value for key, value in report.items() if key != "image_path"})
         report["persisted"] = True
     except (OSError, ValueError, TypeError):
@@ -1002,6 +1234,14 @@ def _normalize_saved_report(report_id: str, report: dict) -> dict:
     report.setdefault("detections", [])
     report.setdefault("price_results", [])
     report.setdefault("price_audit", {})
+    for tag in report["price_audit"].get("tags", []):
+        # Reports saved before tag-level OCR fields existed store whole-image readings as text/price.
+        tag.setdefault("parsed_price", tag.get("price"))
+        tag.setdefault("raw_ocr_text", tag.get("text", ""))
+        tag.setdefault("ocr_status", "read" if tag.get("price") is not None else "unreadable")
+        tag.setdefault("ocr_confidence", tag.get("confidence"))
+        tag.setdefault("confidence", tag.get("ocr_confidence") or 0.0)
+        tag.setdefault("box", [0, 0, 0, 0])
     report.setdefault("void_detections", [])
     report.setdefault("matching_audit", {})
     report.setdefault("model", {})
@@ -1203,13 +1443,24 @@ def report_detection_crop(report_id: str, detection_index: int):
     report = _reports.get(report_id)
     if report is None:
         abort(404)
-    detections = report.get("detections", [])
-    if detection_index < 0 or detection_index >= len(detections):
+    crop = _detection_crop_image(report, detection_index)
+    if crop is None:
         abort(404)
+    output = io.BytesIO()
+    crop.save(output, format="JPEG", quality=88)
+    output.seek(0)
+    return send_file(output, mimetype="image/jpeg", download_name=f"detection-{detection_index + 1}.jpg", max_age=0)
+
+
+def _detection_crop_image(report: dict, detection_index: int) -> Image.Image | None:
+    """The detection's box cropped from the report's stored image (None when unavailable)."""
+    detections = report.get("detections", [])
+    if not 0 <= detection_index < len(detections):
+        return None
     box = detections[detection_index].get("box")
     image_path = _report_image_path(report)
     if not isinstance(box, (list, tuple)) or len(box) != 4 or image_path is None:
-        abort(404)
+        return None
     try:
         with Image.open(image_path) as source:
             image = ImageOps.exif_transpose(source).convert("RGB")
@@ -1218,14 +1469,194 @@ def report_detection_crop(report_id: str, detection_index: int):
             left, top = max(0, min(width, left)), max(0, min(height, top))
             right, bottom = max(0, min(width, right)), max(0, min(height, bottom))
             if right <= left or bottom <= top:
-                abort(404)
-            crop = image.crop((left, top, right, bottom))
-            output = io.BytesIO()
-            crop.save(output, format="JPEG", quality=88)
+                return None
+            return image.crop((left, top, right, bottom))
     except (OSError, TypeError, ValueError):
+        return None
+
+
+def _persist_report(report_id: str, report: dict) -> bool:
+    try:
+        save_audit_result(AUDIT_RESULTS_DIR, report_id, {key: value for key, value in report.items() if key != "image_path"})
+        return True
+    except (OSError, ValueError, TypeError):
+        logger.exception("Could not persist report %s", report_id)
+        return False
+
+
+def _create_reviewed_product(fields: dict, crop: Image.Image | None) -> dict:
+    """Add a catalogue product named during review; the reviewed crop becomes its reference image."""
+    name = str(fields.get("name") or "").strip()
+    if not name:
+        raise ValueError("Enter a name for the new product.")
+    price = str(fields.get("price") or "").strip()
+    if price and not _valid_price(price):
+        raise ValueError("Enter a valid numeric price, or leave it empty.")
+    products = _read_catalogue()
+    existing = next((product for product in products if (product.get("name") or "").strip().casefold() == name.casefold()), None)
+    if existing:
+        raise ValueError(f"{existing['name']} is already in the catalogue (SKU {existing['sku']}); pick it from the list instead.")
+    sku = re.sub(r"[^A-Za-z0-9_-]", "", str(fields.get("sku") or "").strip()) or f"LOCAL-{uuid.uuid4().hex[:8].upper()}"
+    if any(product["sku"].casefold() == sku.casefold() for product in products):
+        raise ValueError(f"SKU {sku} already exists; choose it from the list instead.")
+    product = {
+        "sku": sku, "name": name, "category": str(fields.get("category") or "Uncategorised").strip(),
+        "brand": str(fields.get("brand") or "").strip(), "pack_size": "", "price": price,
+        "model_label": name.casefold(), "active": "true",
+    }
+    if crop is not None:
+        (DATA_DIR / "product_images").mkdir(parents=True, exist_ok=True)
+        crop.convert("RGB").save(DATA_DIR / "product_images" / f"{sku}.jpg", format="JPEG", quality=92)
+        product["image_local_path"] = f"product_images/{sku}.jpg"
+    products.append(product)
+    _save_catalogue(products)
+    return product
+
+
+def _review_queue(report: dict) -> list[dict]:
+    """One review item per non-duplicate detection: crop, identity, reason, top candidates, verdict."""
+    names = {product["sku"]: product.get("name") or product["sku"] for product in _read_catalogue()}
+    names[NOT_PRODUCT_SKU] = "Not a product (reviewed)"
+    matches = {int(match.get("detection_index", -1)): match for match in report.get("matching_audit", {}).get("matches", [])}
+    diagnostics = {item["detection_index"]: item for item in report.get("pipeline_diagnostics", {}).get("detections", [])}
+    items = []
+    for index, detection in enumerate(report.get("detections", [])):
+        if detection.get("duplicate_detection"):
+            continue
+        match = matches.get(index, {})
+        diagnostic = diagnostics.get(index, {})
+        sku = detection.get("matched_sku") or ""
+        review = (report.get("reviews") or {}).get(str(index))
+        slot = detection.get("slot_identity")
+        items.append({
+            "index": index,
+            "sku": sku,
+            "name": names.get(sku, "") if sku else "",
+            "identified": bool(sku),
+            "confidence": detection.get("confidence"),
+            "similarity": match.get("top_similarity"),
+            "margin": match.get("top_margin"),
+            "reason_code": diagnostic.get("reason_code") or match.get("reason_code") or "",
+            "explanation": diagnostic.get("explanation") or match.get("detail") or "",
+            "placement": diagnostic.get("placement_status", ""),
+            "slot": f"R{slot[3]}S{slot[4]}" if slot and len(slot) >= 5 else "",
+            # "Not a product" examples explain a rejection; they are not products a reviewer can pick.
+            "candidates": [
+                {**candidate, "product": candidate.get("product") or names.get(candidate.get("sku"), candidate.get("sku"))}
+                for candidate in (match.get("candidates") or []) if candidate.get("sku") != NOT_PRODUCT_SKU
+            ][:3],
+            "review": review,
+        })
+    return items
+
+
+@app.post("/reports/<report_id>/review")
+def review_detection(report_id: str):
+    """Record a reviewer's verdict on one detection's SKU match and keep its crop as evidence."""
+    report = _reports.get(report_id)
+    if report is None:
+        return jsonify(error="Report not found."), 404
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    try:
+        index = int(payload.get("detection_index"))
+    except (TypeError, ValueError):
+        return jsonify(error="detection_index must be a number."), 400
+    detections = report.get("detections", [])
+    if not 0 <= index < len(detections) or detections[index].get("duplicate_detection"):
+        return jsonify(error="That detection does not exist in this report."), 404
+    decision = str(payload.get("decision") or "")
+    detection = detections[index]
+    match = next((item for item in report.get("matching_audit", {}).get("matches", [])
+                  if int(item.get("detection_index", -1)) == index), {})
+    top = (match.get("candidates") or [{}])[0]
+    suggestion = next((candidate for candidate in match.get("candidates") or [] if candidate.get("sku") != NOT_PRODUCT_SKU), {})
+    crop = _detection_crop_image(report, index)
+    catalogue = {product["sku"]: product for product in _read_catalogue()}
+    new_product = payload.get("new_product") if isinstance(payload.get("new_product"), dict) else None
+    if new_product is None and payload.get("new_name"):
+        new_product = {"name": payload.get("new_name"), "price": payload.get("new_price"),
+                       "category": payload.get("new_category"), "sku": payload.get("new_sku")}
+    try:
+        if decision == "correct":
+            sku = str(payload.get("sku") or detection.get("matched_sku") or suggestion.get("sku") or "")
+            if sku not in catalogue:
+                raise ValueError("There is no suggested catalogue product to confirm; mark it Wrong and pick the product.")
+        elif decision == "wrong":
+            if new_product:
+                product = _create_reviewed_product(new_product, crop)
+                catalogue[product["sku"]] = product
+                sku = product["sku"]
+            else:
+                sku = str(payload.get("sku") or "")
+                if sku not in catalogue:
+                    raise ValueError("Choose the correct product from the catalogue, or add it as a new product.")
+        elif decision == "not_product":
+            sku = ""
+        else:
+            raise ValueError("decision must be correct, wrong, or not_product.")
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+
+    product_name = catalogue[sku].get("name", sku) if sku else "Not a product"
+    record = record_feedback(DATA_DIR, {
+        "report_id": report_id, "detection_index": index, "decision": decision,
+        "true_sku": sku or None, "product_name": product_name,
+        "model_top_sku": top.get("sku"), "model_top_similarity": match.get("top_similarity"),
+        "model_top_margin": match.get("top_margin"), "model_accepted_sku": match.get("accepted_sku"),
+        "threshold_used": match.get("threshold"), "image_name": report.get("image_name"),
+        # A newly created product already uses this crop as its catalogue image.
+        "use_as_reference": not (decision == "wrong" and new_product),
+    }, crop)
+    review = {"id": record["id"], "decision": decision, "sku": sku, "product_name": product_name,
+              "created_at": record["created_at"]}
+    report.setdefault("reviews", {})[str(index)] = review
+    detection["review"] = review
+    persisted = _persist_report(report_id, report)
+    messages = {
+        "correct": f"Confirmed as {product_name}. This photo is now a reference for it.",
+        "wrong": f"Corrected to {product_name}. This photo is now a reference for it.",
+        "not_product": "Marked as not a product. Similar crops will no longer be matched.",
+    }
+    return jsonify(ok=True, review=review, reviews=len(report["reviews"]), persisted=persisted,
+                   message=messages[decision] + " Re-analyze to update the compliance results.")
+
+
+@app.post("/reports/<report_id>/reanalyze")
+def reanalyze_report(report_id: str):
+    """Run the same stored photo again, with current reviews, catalogue, and threshold."""
+    report = _reports.get(report_id)
+    if report is None:
         abort(404)
-    output.seek(0)
-    return send_file(output, mimetype="image/jpeg", download_name=f"detection-{detection_index + 1}.jpg", max_age=0)
+    options = report.get("analysis_options") or {}
+    form = {
+        "reanalyze_image": report.get("image_file") or "", "reanalyze_name": report.get("image_name") or "",
+        "store": report.get("store_name") or "", "planogram": report.get("planogram_name") or "",
+        "match_threshold": request.form.get("match_threshold") or options.get("match_threshold")
+        or (report.get("matching_audit", {}).get("calibration") or {}).get("acceptance_threshold") or "",
+        "match_margin": options.get("match_margin") or "",
+    }
+    if report.get("confidence_threshold"):
+        form["confidence_threshold"] = str(report["confidence_threshold"])
+    if options.get("calibrated_layout", report.get("layout_validation", {}).get("requested")):
+        form["calibrated_layout"] = "on"
+    if options.get("price_check", report.get("price_audit", {}).get("requested")):
+        form["price_check"] = "on"
+    try:
+        new_id, new_report = _run_audit({}, form)
+    except AuditError as error:
+        flash(error.message, "error")
+        return redirect(url_for("report_detail", report_id=report_id))
+    reviews = len(report.get("reviews") or {})
+    flash(f"Re-analyzed with {len(load_feedback(DATA_DIR))} saved review(s)"
+          + (f" ({reviews} from this report)." if reviews else "."), "success")
+    return redirect(url_for("report_detail", report_id=new_id))
+
+
+@app.get("/favicon.ico")
+def favicon():
+    icon = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1268f5"/>'
+            '<path d="M8 11h16M8 16h16M8 21h16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>')
+    return app.response_class(icon, mimetype="image/svg+xml", headers={"Cache-Control": "max-age=86400"})
 
 
 @app.get("/reports/<report_id>/annotated")
@@ -1253,6 +1684,7 @@ def upload_page():
         example=example,
         test_images=list(_test_images()),
         planogram_id=active_planogram_id,
+        calibrated_threshold=_calibrated_match_values()["threshold"],
     )
 
 
@@ -1878,6 +2310,17 @@ def settings_page():
         model=detector_status(),
         matcher=MATCHER_MODEL_ID,
         calibration_status=_calibration_summary(),
+        calibrated=_calibrated_match_values(),
+        effective_margin=_match_settings(_load_settings())[1],
+        feedback_stats=feedback_accuracy(load_feedback(DATA_DIR), *_match_settings(_load_settings())),
+        match_threshold_range=MATCH_THRESHOLD_RANGE,
+        feedback_points=[
+            {"similarity": record["model_top_similarity"], "margin": record["model_top_margin"],
+             "correct": record.get("decision") != "not_product" and record.get("true_sku") == record.get("model_top_sku")}
+            for record in load_feedback(DATA_DIR)
+            if record.get("model_top_similarity") is not None and record.get("model_top_margin") is not None
+            and record.get("model_top_sku")
+        ],
         results_dir=str(AUDIT_RESULTS_DIR),
         python_version=platform.python_version(),
         page_title="Settings",
@@ -1899,6 +2342,17 @@ def save_settings():
         settings["low_stock_threshold"] = int(request.form.get("low_stock_threshold", settings["low_stock_threshold"]))
         settings["product_group_max_gap_ratio"] = float(request.form.get("product_group_max_gap_ratio", settings["product_group_max_gap_ratio"]))
         settings["product_group_min_vertical_overlap"] = float(request.form.get("product_group_min_vertical_overlap", settings["product_group_min_vertical_overlap"]))
+        if request.form.get("match_reset"):
+            settings["match_threshold"], settings["match_margin"] = DEFAULT_MATCH_THRESHOLD, None
+        else:
+            if request.form.get("match_threshold"):
+                settings["match_threshold"] = float(request.form["match_threshold"])
+            if request.form.get("match_margin"):
+                settings["match_margin"] = float(request.form["match_margin"])
+        try:
+            _match_settings(settings)
+        except AuditError as error:
+            raise ValueError(error.message) from error
         if not 0.1 <= settings["detection_confidence"] <= 0.9 or not 0.1 <= settings["price_confidence"] <= 0.95:
             raise ValueError("Confidence values are outside the allowed range.")
         if settings["minimum_product_height"] < 1 or settings["low_stock_threshold"] < 0:
@@ -1926,7 +2380,14 @@ def report_detail(report_id: str):
     structured = _report_summary(report_id, report)
     report.setdefault("detected_planogram", structured.get("detected_planogram", {}))
     report.setdefault("planogram_comparison", structured.get("planogram_comparison", {}))
-    return render_template("report.html", report=report, report_id=report_id)
+    catalogue = _read_catalogue()
+    return render_template(
+        "report.html", report=report, report_id=report_id, review_items=_review_queue(report),
+        catalogue_choices=sorted(({"sku": product["sku"], "name": product.get("name") or product["sku"]}
+                                  for product in catalogue), key=lambda item: item["name"].casefold()),
+        can_reanalyze=_report_image_path(report) is not None,
+        page_title="Scan report", active_page="reports",
+    )
 
 
 @app.get("/reports/<report_id>/download")

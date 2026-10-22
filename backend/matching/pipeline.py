@@ -1,13 +1,13 @@
-"""Orchestrate CLIP recognition, modular slot mapping, comparison, and persistence."""
+"""Orchestrate image-embedding SKU recognition, modular slot mapping, comparison, and persistence."""
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
+from .calibration import load_runtime_calibration
 from .planogram_compare import compare_planogram
 from .recognizer import MatchingUnavailable, ProductRecognizer
 from .shelf_mapper import CoordinateShelfMapper
@@ -26,14 +26,20 @@ class ProductMatchingPipeline:
         acceptance_threshold: float | None = None,
         minimum_margin: float = 0.0,
         top_k: int = 5,
+        detector_fingerprint: dict[str, Any] | None = None,
     ):
         self.data_dir = Path(data_dir)
         self.calibration_path = Path(calibration_path or self.data_dir / "clip_calibration.json")
-        calibration = self._read_calibration()
-        if acceptance_threshold is None and calibration.get("status") == "calibrated_on_validation_set" and calibration.get("model_id") == model_id:
-            value = calibration.get("threshold")
-            acceptance_threshold = float(value) if value is not None else None
-            minimum_margin = float(calibration.get("minimum_margin", minimum_margin))
+        if acceptance_threshold is None:
+            self.calibration = load_runtime_calibration(
+                self.calibration_path, model_id, detector_fingerprint=detector_fingerprint,
+            )
+            acceptance_threshold = self.calibration["threshold"]
+            if acceptance_threshold is not None:
+                minimum_margin = self.calibration["minimum_margin"]
+        else:
+            self.calibration = {"state": "explicit", "threshold": acceptance_threshold,
+                                "minimum_margin": minimum_margin, "issues": [], "payload": {}}
         self.recognizer = ProductRecognizer(
             data_dir=self.data_dir,
             cache_path=cache_path or self.data_dir / "cache" / "clip_catalogue_embeddings.json",
@@ -42,15 +48,9 @@ class ProductMatchingPipeline:
             acceptance_threshold=acceptance_threshold,
             minimum_margin=minimum_margin,
             top_k=top_k,
+            calibration_state=self.calibration["state"],
         )
         self.slot_mapper = slot_mapper or CoordinateShelfMapper()
-
-    def _read_calibration(self) -> dict[str, Any]:
-        try:
-            payload = json.loads(self.calibration_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return {"status": "uncalibrated"}
-        return payload if isinstance(payload, dict) else {"status": "uncalibrated"}
 
     def run(
         self,
@@ -59,12 +59,24 @@ class ProductMatchingPipeline:
         catalogue: list[dict[str, Any]],
         planogram: list[dict[str, Any]],
         slot_mapper: Any = None,
+        acceptance_threshold: float | None = None,
+        minimum_margin: float | None = None,
     ) -> dict[str, Any]:
+        """Match, map and compare. acceptance_threshold/minimum_margin set by an operator for this
+        run override the calibrated values; the result records which values were used and why."""
         slot_mapper = slot_mapper or self.slot_mapper
+        threshold = self.recognizer.acceptance_threshold if acceptance_threshold is None else float(acceptance_threshold)
+        margin = self.recognizer.minimum_margin if minimum_margin is None else float(minimum_margin)
+        threshold_source = (
+            "operator" if acceptance_threshold is not None or minimum_margin is not None
+            else "calibration" if self.calibration["state"] in {"valid", "stale"} else self.calibration["state"]
+        )
         with Image.open(image_path) as opened:
             image = opened.convert("RGB")
         try:
-            matches = self.recognizer.match_detections(image, detections, catalogue)
+            matches = self.recognizer.match_detections(
+                image, detections, catalogue, acceptance_threshold=threshold, minimum_margin=margin,
+            )
             for index, match in enumerate(matches):
                 match["detection_index"] = int(detections[index].get("_source_detection_index", index))
             matching_error = None
@@ -82,6 +94,7 @@ class ProductMatchingPipeline:
                     "top_margin": None,
                     "accepted_sku": None,
                     "status": "Unknown / Needs Review",
+                    "reason_code": "matcher_unavailable",
                     "detail": str(error),
                     "similarity_is_probability": False,
                 }
@@ -112,11 +125,20 @@ class ProductMatchingPipeline:
                 "assumptions": assumptions,
             },
             "calibration": {
-                "path": str(self.calibration_path),
+                "path": self.calibration_path.name,
                 "model_id": self.recognizer.model_id,
-                "acceptance_threshold": self.recognizer.acceptance_threshold,
-                "minimum_margin": self.recognizer.minimum_margin,
-                "calibration_status": self._read_calibration().get("status", "uncalibrated"),
+                "acceptance_threshold": threshold,
+                "minimum_margin": margin,
+                "threshold_source": threshold_source,
+                "calibrated_threshold": self.calibration["threshold"],
+                "calibrated_minimum_margin": self.calibration["minimum_margin"],
+                "calibration_status": "explicit" if self.calibration["state"] == "explicit"
+                else self.calibration["payload"].get("status", "uncalibrated"),
+                "state": self.calibration["state"],
+                "issues": self.calibration["issues"],
+                "detector_model": self.calibration["payload"].get("detector_model"),
+                "metrics": self.calibration["payload"].get("metrics"),
+                "created_at": self.calibration["payload"].get("created_at"),
             },
             "matching_error": matching_error,
             "empty_slot_count": sum(not str(row.get("expected_sku", row.get("sku", ""))).strip() for row in planogram),

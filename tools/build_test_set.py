@@ -10,7 +10,14 @@ Each scene is a fixed-camera, front-facing shelf whose rows and slots follow the
 grid exactly (the "calibrated layout"), with ₹ price tags on the shelf edge. Product facings
 are augmented (scale, rotation, brightness, blur) so they never equal the gallery images.
 Ground truth (facing boxes, slot contents, tag prices, expected statuses) is written to
-data/test_set/ground_truth.json.
+data/test_set/ground_truth.json, with SHA-256 fingerprints of the planogram and catalogue it was
+built from so calibration and evaluation can refuse a stale test set.
+
+Planogram SKUs without an expected_price get no rendered tag and an "Unverified" price truth;
+no price is invented for them.
+
+The scenes are synthetic (catalogue photos pasted on a flat shelf). Metrics measured on them do
+not predict accuracy on real store photos.
 
 Usage:  python -m tools.build_test_set
 """
@@ -18,6 +25,7 @@ Usage:  python -m tools.build_test_set
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import random
 from pathlib import Path
@@ -48,9 +56,17 @@ def load_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default(size=size)
 
 
-def expected_status(expected_sku: str, expected_facings: int, placed: list[str], planogram_skus: set[str]) -> str:
-    """Status the planogram audit should report for one slot (mirrors src.planogram)."""
-    mapped = [sku for sku in placed if sku in planogram_skus]  # non-planogram SKUs are reported separately
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def expected_status(expected_sku: str, expected_facings: int, placed: list[str]) -> str:
+    """Status the planogram audit should report for one slot under the calibrated layout.
+
+    Mirrors src.planogram.evaluate_planogram with a slot mapper: every identified catalogue
+    product mapped to a slot counts, including products that are not in the planogram.
+    """
+    mapped = list(placed)
     if not expected_sku:
         return "Unexpected Product" if mapped else "Empty Slot"
     if not mapped:
@@ -138,18 +154,27 @@ def build(output_dir: Path = OUTPUT_DIR, seed: int = SEED) -> dict:
     slots = max(int(row["slot"]) for row in planogram)
     expected = {(int(row["row"]), int(row["slot"])): (row["expected_sku"], int(row["facing_count"] or 0)) for row in planogram}
 
+    missing_images = sorted(planogram_skus - set(catalogue))
+    if missing_images:
+        raise SystemExit(f"Planogram SKUs without a catalogue reference image: {missing_images}")
     prices = {}
     for sku in planogram_skus:
-        raw = catalogue.get(sku, {}).get("expected_price") or catalogue.get(sku, {}).get("price")
-        if not raw:
-            raise SystemExit(f"Planogram SKU {sku} has no expected_price in data/catalogue.csv; set prices first.")
-        prices[sku] = float(raw)
+        raw = catalogue[sku].get("expected_price") or catalogue[sku].get("price")
+        if raw:
+            prices[sku] = float(raw)
+    unpriced = sorted(planogram_skus - set(prices))
 
     others = sorted(sku for sku in catalogue if sku not in planogram_skus)
     rng.shuffle(others)
     distractors = others[:N_DISTRACTORS]
     holdout = others[N_DISTRACTORS:N_DISTRACTORS + N_HOLDOUT]
     validation = others[N_DISTRACTORS + N_HOLDOUT:N_DISTRACTORS + N_HOLDOUT + N_VALIDATION]
+    groups = {"planogram": planogram_skus, "distractor": set(distractors), "holdout": set(holdout), "validation": set(validation)}
+    names = list(groups)
+    for position, left in enumerate(names):
+        for right in names[position + 1:]:
+            if groups[left] & groups[right]:
+                raise SystemExit(f"SKU split overlap between {left} and {right}: {sorted(groups[left] & groups[right])}")
 
     renderer = ShelfRenderer(catalogue, rng, rows, slots)
     for sub in ("test", "validation"):
@@ -159,7 +184,11 @@ def build(output_dir: Path = OUTPUT_DIR, seed: int = SEED) -> dict:
         return {key: [sku] * facings for key, (sku, facings) in expected.items() if sku}
 
     def correct_tags() -> dict[tuple[int, int], float]:
-        return {key: prices[sku] for key, (sku, _) in expected.items() if sku}
+        return {key: prices[sku] for key, (sku, _) in expected.items() if sku in prices}
+
+    def wrong_price(tags: dict, key: tuple[int, int], delta: float) -> None:
+        if sku_at.get(key) in prices:  # an unpriced SKU has no tag to falsify
+            tags[key] = prices[sku_at[key]] + delta
 
     sku_at = {key: sku for key, (sku, _) in expected.items()}
     scenarios = []
@@ -182,22 +211,26 @@ def build(output_dir: Path = OUTPUT_DIR, seed: int = SEED) -> dict:
     contents[(3, 4)] = [sku_at[(2, 2)]] * 2
     contents[(3, 5)] = [distractors[1]] * 2
     contents[(2, 1)] = [sku_at[(2, 1)]] * 3
-    scenarios.append(("04_unexpected", "Planogram product in empty slot R3S4, non-planogram product in R3S5, R2S1 overstocked.", contents, tags))
+    scenarios.append(("04_unexpected", "R3S4 holds the R2S2 product, non-planogram product in R3S5, R2S1 overstocked.", contents, tags))
 
     contents, tags = planogram_contents(), correct_tags()
     for key, delta in (((1, 3), 20.0), ((2, 2), -5.0), ((3, 1), 10.0)):
-        tags[key] = prices[sku_at[key]] + delta
+        wrong_price(tags, key, delta)
     scenarios.append(("05_price_mismatch", "Placement compliant; tags for R1S3, R2S2, R3S1 show wrong prices.", contents, tags))
 
     contents, tags = planogram_contents(), correct_tags()
     contents[(2, 5)], contents[(3, 3)] = [sku_at[(3, 3)]] * 2, [sku_at[(2, 5)]] * 2
     contents[(1, 4)] = [sku_at[(1, 4)]]
     contents[(3, 5)] = [distractors[2]]
-    tags[(2, 1)] = prices[sku_at[(2, 1)]] + 50.0
+    wrong_price(tags, (2, 1), 50.0)
     scenarios.append(("06_mixed", "R2S5/R3S3 swapped, R1S4 short one facing, distractor in R3S5, R2S1 price wrong.", contents, tags))
 
     ground_truth = {
         "seed": seed,
+        "synthetic": True,
+        "planogram_sha256": file_sha256(DATA_DIR / "planogram.csv"),
+        "catalogue_sha256": file_sha256(DATA_DIR / "catalogue.csv"),
+        "unpriced_planogram_skus": unpriced,
         "layout": {"type": "equal-grid", "rows": rows, "slots": slots, "width": WIDTH, "height": ROW_HEIGHT * rows,
                    "description": "Fixed-camera front view; rows and slots are equal bands matching the planogram."},
         "split": {"test_planogram_skus": sorted(planogram_skus), "test_distractor_skus": distractors,
@@ -216,9 +249,9 @@ def build(output_dir: Path = OUTPUT_DIR, seed: int = SEED) -> dict:
             slots_truth.append({
                 "row": row, "slot": slot, "expected_sku": sku, "expected_facings": facings_expected,
                 "placed_skus": placed, "tag_price": tags.get((row, slot)),
-                "expected_status": expected_status(sku, facings_expected, placed, planogram_skus),
+                "expected_status": expected_status(sku, facings_expected, placed),
             })
-        price_truth = {}
+        price_truth = {sku: "Unverified" for sku in unpriced}
         for (row, slot), price in tags.items():
             sku = sku_at[(row, slot)]
             price_truth[sku] = "Match" if abs(price - prices[sku]) < 0.01 else "Mismatch"

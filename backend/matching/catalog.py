@@ -36,7 +36,8 @@ def load_catalogue_references(catalogue: list[dict[str, Any]], data_dir: Path) -
 
 
 class CatalogueEmbeddingCache:
-    """Caches normalized catalogue vectors by SKU, file signature, and CLIP model id."""
+    """Caches normalized reference vectors by reference key (the SKU for catalogue images), file
+    signature, and encoder model id; returns {key: vector}."""
 
     def __init__(self, cache_path: Path):
         self.cache_path = Path(cache_path)
@@ -64,11 +65,11 @@ class CatalogueEmbeddingCache:
         pending: list[dict[str, Any]] = []
         cache_entries = cache["embeddings"]
         for reference in references:
-            sku = str(reference["sku"])
+            key = str(reference.get("key") or reference["sku"])
             signature = self._signature(reference, encoder.model_id)
-            entry = cache_entries.get(sku)
+            entry = cache_entries.get(key)
             if entry and entry.get("signature") == signature and isinstance(entry.get("vector"), list):
-                embeddings[sku] = [float(value) for value in entry["vector"]]
+                embeddings[key] = [float(value) for value in entry["vector"]]
             else:
                 pending.append({**reference, "signature": signature})
 
@@ -82,9 +83,9 @@ class CatalogueEmbeddingCache:
                 raise ValueError("Image encoder returned a different number of vectors than input images")
             for reference, vector in zip(pending, vectors):
                 normalized = _normalize_vector(vector)
-                sku = str(reference["sku"])
-                embeddings[sku] = normalized
-                cache_entries[sku] = {"signature": reference["signature"], "vector": normalized}
+                key = str(reference.get("key") or reference["sku"])
+                embeddings[key] = normalized
+                cache_entries[key] = {"signature": reference["signature"], "vector": normalized}
             self._write_cache(cache)
         return embeddings, {"cached": len(references) - len(pending), "computed": len(pending)}
 

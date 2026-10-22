@@ -23,10 +23,33 @@ class WebPageTests(unittest.TestCase):
         web_app._downgrade_unsupported_slot_statuses([slot], [], True)
         self.assertEqual(slot["status"], "Needs Review")
 
-        slot["status"] = "Missing Expected Product"
-        void = {"slot_identity": ["S", "P", "A", "1", "2"]}
-        web_app._downgrade_unsupported_slot_statuses([slot], [void], True)
+        # Slot 2 of 2 spans x 500-1000 under the equal-grid layout.
+        neighbour = {"store_id": "S", "planogram_id": "P", "shelf": "A", "row": "1", "slot": "1",
+                     "sku": "B1", "status": "Compliant", "observed": 1, "expected": 1}
+        full_void = {"slot_identity": ["S", "P", "A", "1", "2"], "box": [520, 0, 990, 100], "image_width": 1000}
+        slot.update(status="Missing Expected Product", observed=0, expected=2)
+        web_app._downgrade_unsupported_slot_statuses([neighbour, slot], [full_void], True)
         self.assertEqual(slot["status"], "Missing Expected Product")
+        self.assertEqual(slot["reason_code"], "void_confirms_absence")
+
+        # A narrow void beside a product the detector missed does not prove the slot is empty.
+        narrow_void = {**full_void, "box": [900, 0, 1000, 100]}
+        slot.update(status="Missing Expected Product")
+        web_app._downgrade_unsupported_slot_statuses([neighbour, slot], [narrow_void], True)
+        self.assertEqual(slot["status"], "Needs Review")
+        self.assertEqual(slot["reason_code"], "absence_not_confirmed")
+
+        # With some facings identified, a mapped void does confirm the shortfall.
+        slot.update(status="Missing Expected Product", observed=1)
+        web_app._downgrade_unsupported_slot_statuses([neighbour, slot], [narrow_void], True)
+        self.assertEqual(slot["status"], "Missing Expected Product")
+        self.assertEqual(slot["reason_code"], "void_confirms_facing_shortfall")
+
+        # A void never overrides a slot whose expected facings were all identified.
+        slot.update(status="Compliant", observed=2)
+        web_app._downgrade_unsupported_slot_statuses([neighbour, slot], [full_void], True)
+        self.assertEqual(slot["status"], "Needs Review")
+        self.assertEqual(slot["reason_code"], "void_conflicts_with_products")
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -447,7 +470,9 @@ class WebPageTests(unittest.TestCase):
             web_app.validate_planogram(live_planogram, live_catalogue),
             [],
         )
-        self.assertEqual(sum(not row["sku"] for row in live_planogram), 2)
+        # Recognition needs a reference image for every assigned planogram SKU.
+        references = {row["sku"] for row in live_catalogue if row.get("image_local_path")}
+        self.assertFalse({row["sku"] for row in live_planogram if row["sku"]} - references)
 
     def test_aggregate_report_export_has_header_when_empty(self):
         response = self.client.get("/reports/download")
