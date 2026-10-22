@@ -59,6 +59,11 @@ class AuditWorkflowTests(unittest.TestCase):
         self.addCleanup(lambda: (web_app._reports.clear(), web_app._reports.update(old_reports)))
         web_app.app.config["TESTING"] = True
         self.client = web_app.app.test_client()
+        auxiliary = patch.object(web_app, "detect_price_tags_and_voids", return_value={
+            "price_tags": [], "voids": [], "model": {"class_names": ["Price_Tag", "void"]},
+        })
+        auxiliary.start()
+        self.addCleanup(auxiliary.stop)
 
     def _analyze(self, detections=DETECTIONS, **extra):
         data = {"shelf_image": (io.BytesIO(jpeg_bytes()), "shelf.jpg"), "store": "Demo Store", **extra}
@@ -85,6 +90,9 @@ class AuditWorkflowTests(unittest.TestCase):
         self.assertTrue(saved.is_file())
         payload = json.loads(saved.read_text(encoding="utf-8"))
         self.assertEqual(payload["detection_count"], 2)
+        self.assertIn("compliance_score", payload)
+        self.assertEqual(payload["compliance_score"]["status"], "unavailable")
+        self.assertEqual(payload["compliance_rate"], payload["compliance_score"]["score"])
         self.assertNotIn("image_path", payload)
         self.assertEqual(payload["facing_summary"]["expected_facings"], 2)
         self.assertEqual(payload["facing_summary"]["detected_objects"], 2)
@@ -118,6 +126,7 @@ class AuditWorkflowTests(unittest.TestCase):
         (self.results_dir / "broken.json").write_text("{not json", encoding="utf-8")
         web_app._reports.update(web_app._load_saved_reports(self.results_dir))
         self.assertEqual(list(web_app._reports), ["abc123"])
+        self.assertEqual(web_app._reports["abc123"]["compliance_score"]["status"], "unavailable")
         for route in ("/", "/reports", "/reports/abc123", "/reports/abc123/download"):
             self.assertEqual(self.client.get(route).status_code, 200, route)
         self.assertEqual(self.client.get("/reports/abc123/image").status_code, 404)
@@ -141,6 +150,7 @@ class AuditWorkflowTests(unittest.TestCase):
         missing = self.client.post("/api/analyze", data={}, content_type="multipart/form-data")
         self.assertEqual(missing.status_code, 400)
         self.assertIn("Choose a shelf image", missing.json["error"])
+        self.assertEqual(missing.json["compliance_score"]["status"], "unavailable")
         self.assertEqual(self.client.get("/api/reports/nope").status_code, 404)
         self.assertEqual(self.client.get("/api/does-not-exist").json["error"] is not None, True)
 
@@ -152,6 +162,8 @@ class AuditWorkflowTests(unittest.TestCase):
             )
         self.assertEqual(created.status_code, 201)
         self.assertEqual(created.json["detection_count"], 2)
+        self.assertIn("compliance_score", created.json)
+        self.assertIn("applicable_check_count", created.json["compliance_score"])
         self.assertTrue(created.json["persisted"])
         listed = self.client.get("/api/reports").json["reports"]
         self.assertEqual(listed[0]["report_id"], created.json["report_id"])
@@ -181,6 +193,56 @@ class AuditWorkflowTests(unittest.TestCase):
         self.assertIn(b"2 detections", response.data)
         result_id = next(iter(web_app._detect_results))
         self.assertEqual(self.client.get(f"/detect/{result_id}/image").status_code, 200)
+
+
+class DetectorUnitTests(unittest.TestCase):
+    def test_missing_checkpoint_reports_the_configured_path(self):
+        with tempfile.TemporaryDirectory() as temp:
+            missing = Path(temp) / "missing.pt"
+            detector = detector_module.YoloDetector(missing)
+            with self.assertRaisesRegex(detector_module.DetectorUnavailable, "missing.pt"):
+                detector.load()
+
+    def test_inference_preserves_checkpoint_class_mapping_and_scores(self):
+        class Scalar:
+            def __init__(self, value):
+                self.value = value
+
+            def item(self):
+                return self.value
+
+        class Coordinates:
+            def tolist(self):
+                return [1.234, 2.345, 90.456, 110.567]
+
+        class Box:
+            cls = Scalar(1)
+            conf = Scalar(0.87654)
+            xyxy = [Coordinates()]
+
+        class Result:
+            orig_shape = (120, 100)
+            names = {0: "product", 1: "beverage"}
+            boxes = [Box()]
+
+        class FakeModel:
+            task = "detect"
+            names = Result.names
+
+            def predict(self, **kwargs):
+                return [Result()]
+
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = Path(temp) / "model.pt"
+            checkpoint.touch()
+            detector = detector_module.YoloDetector(checkpoint)
+            with patch("ultralytics.YOLO", return_value=FakeModel()):
+                detections = detector.detect(Path(temp) / "shelf.jpg", confidence=0.4)
+
+        self.assertEqual(detections, [{
+            "label": "beverage", "class_id": 1, "confidence": 0.8765,
+            "box": [1.23, 2.35, 90.46, 110.57], "image_width": 100, "image_height": 120,
+        }])
 
 
 @unittest.skipUnless(DEFAULT_MODEL_PATH.is_file() and SAMPLE_IMAGE_PATH.is_file(), "model or sample image missing")

@@ -135,7 +135,7 @@ def evaluate_planogram(
             continue
 
         sku = next(iter(matches))
-        if sku not in expected_skus:
+        if sku not in expected_skus and slot_mapper is None:
             product = products_by_sku[sku]
             detection_findings.append({
                 "product": product.get("name", label),

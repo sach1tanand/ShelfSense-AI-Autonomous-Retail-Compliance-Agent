@@ -22,7 +22,9 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 from backend.matching.pipeline import ProductMatchingPipeline
+from backend.matching.detections import suppress_duplicate_detections
 from backend.matching.shelf_mapper import CoordinateShelfMapper
+from backend.matching.shelf_reconstruction import compare_expected_to_detected, reconstruct_detected_planogram
 from backend.matching.storage import save_audit_result
 from config.settings import (
     ALLOWED_EXTENSIONS,
@@ -33,17 +35,22 @@ from config.settings import (
     MATCHER_MODEL_ID,
     MAX_IMAGE_PIXELS,
     MODEL_PATH,
+    PRICE_TAG_VOID_MODEL_PATH,
+    PRICE_TAG_VOID_CONFIDENCE,
     ROOT_DIR,
     SAMPLE_IMAGE_PATH,
     SECRET_KEY,
     TEST_SET_DIR,
     UPLOAD_DIR,
 )
-from src.detector import DetectorUnavailable, annotate_image, detect_products, detector_status, get_detector
-from src.ocr import OcrUnavailable, read_price_tags
+from src.detector import (
+    DetectorUnavailable, annotate_image, detect_price_tags_and_voids, detect_products, detector_status, get_detector,
+)
+from src.ocr import OcrUnavailable, read_price_crop
 from src.planogram import evaluate_planogram, validate_planogram
 from src.price_checker import check_prices
 from src.report import build_report
+from src.scoring import calculate_compliance_score
 
 logging.basicConfig(level=os.getenv("SHELFSENSE_LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("shelfsense")
@@ -56,7 +63,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 _reports: dict[str, dict] = {}
 _detect_results: dict[str, dict] = {}
 _matching_pipelines: dict[tuple[str, str], ProductMatchingPipeline] = {}
-REPORT_SCHEMA_VERSION = 2
+REPORT_SCHEMA_VERSION = 3
 CATALOGUE_PATH = DATA_DIR / "catalogue.csv"
 SETTINGS_PATH = ROOT_DIR / "config" / "user_settings.json"
 CATALOGUE_FIELDS = ["sku", "name", "category", "brand", "pack_size", "price", "model_label", "active"]
@@ -73,7 +80,9 @@ def _valid_price(value: str) -> bool:
 
 REPORT_EXPORT_FIELDS = [
     "record_type", "created_at", "store_name", "planogram_name", "store_id", "planogram_id", "image_name",
-    "compliance_rate", "detection_count", "compliant_count", "product", "sku",
+    "compliance_rate", "score_status", "score_coverage", "compliant_checks", "violation_checks",
+    "unresolved_checks", "applicable_check_count", "score_breakdown_json",
+    "detection_count", "compliant_count", "product", "sku",
     "shelf", "row", "slot", "position", "expected_facings", "observed_facings", "status",
     "expected_price", "observed_price", "confidence", "bounding_box",
     "accepted_sku", "top_similarity", "top_margin", "candidates_json", "slot_mapping_json",
@@ -88,7 +97,17 @@ def _report_export_rows(report: dict) -> list[dict]:
             "compliance_rate", "detection_count", "compliant_count",
         )
     }
-    rows = []
+    score = report.get("compliance_score", {})
+    metadata.update({
+        "score_status": score.get("status", "unavailable"),
+        "score_coverage": score.get("coverage", 0),
+        "compliant_checks": score.get("compliant_checks", 0),
+        "violation_checks": score.get("violation_checks", 0),
+        "unresolved_checks": score.get("unresolved_checks", 0),
+        "applicable_check_count": score.get("applicable_check_count", 0),
+        "score_breakdown_json": json.dumps(score.get("breakdown", {}), ensure_ascii=False),
+    })
+    rows = [{**metadata, "record_type": "audit_summary", "status": score.get("status", "unavailable")}]
     for item in report.get("compliance", []):
         rows.append({
             **metadata,
@@ -159,6 +178,8 @@ def _load_settings() -> dict:
         "detection_confidence": DETECTION_CONFIDENCE,
         "price_confidence": 0.5,
         "minimum_product_height": 30,
+        "product_group_max_gap_ratio": 0.25,
+        "product_group_min_vertical_overlap": 0.6,
         "price_verification": True,
         "shelf_gap_detection": True,
         "low_stock_alerts": True,
@@ -209,6 +230,9 @@ def _save_catalogue(products: list[dict]) -> None:
         fields = next(csv.reader(csv_file), [])
     if not fields:
         fields = CATALOGUE_FIELDS
+    for optional_field in ("barcode", "image_local_path"):
+        if optional_field not in fields and any(product.get(optional_field) or product.get("_source", {}).get(optional_field) for product in products):
+            fields.append(optional_field)
     existing = {product["sku"].casefold(): product for product in products}
     with CATALOGUE_PATH.open("w", encoding="utf-8", newline="") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fields, extrasaction="ignore")
@@ -232,6 +256,9 @@ def _save_catalogue(products: list[dict]) -> None:
                     if canonical == "active" and target == "status":
                         value = "Active" if str(value).casefold() == "true" else "Inactive"
                     row[target] = value
+            for optional_field in ("barcode", "image_local_path"):
+                if optional_field in fields and product.get(optional_field):
+                    row[optional_field] = product[optional_field]
             writer.writerow(row)
 
 
@@ -281,31 +308,46 @@ def _save_planogram(rows: list[dict]) -> None:
         fields = ["shelf", "position", "sku", "expected_facings", "min_price"]
     baseline = existing_rows[0] if existing_rows else {}
     legacy_schema = "expected_sku" in fields or "facing_count" in fields
-    with path.open("w", encoding="utf-8", newline="") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for planogram_row in rows:
-            source = dict(planogram_row.get("_source", {}))
-            source_shelf = planogram_row.get("_shelf_id") or baseline.get("shelf", "S1")
-            row_match = re.search(r"\d+", str(planogram_row.get("shelf", "")))
-            row_value = planogram_row.get("_row_number") or source.get("row") or (row_match.group(0) if row_match else "1")
-            values = {
-                "shelf": source_shelf if legacy_schema else planogram_row.get("shelf", source_shelf),
-                "row": row_value,
-                "slot": planogram_row.get("position", "1"),
-                "expected_sku": planogram_row.get("sku", ""),
-                "facing_count": planogram_row.get("facing_count", planogram_row.get("expected_facings", "0")),
-                "position": planogram_row.get("position", "1"),
-                "sku": planogram_row.get("sku", ""),
-                "expected_facings": planogram_row.get("expected_facings", planogram_row.get("facing_count", "0")),
-                "min_price": planogram_row.get("min_price", ""),
-                "store_id": source.get("store_id", baseline.get("store_id", "STORE001")),
-                "planogram_id": source.get("planogram_id", baseline.get("planogram_id", "DEFAULT")),
-            }
-            for field in fields:
-                if field in values:
-                    source[field] = values[field]
-            writer.writerow(source)
+    temporary_path = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary_path.open("w", encoding="utf-8", newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=fields, extrasaction="ignore")
+            writer.writeheader()
+            for planogram_row in rows:
+                source = dict(planogram_row.get("_source", {}))
+                source_shelf = planogram_row.get("_shelf_id") or baseline.get("shelf", "S1")
+                row_match = re.search(r"\d+", str(planogram_row.get("shelf", "")))
+                row_value = planogram_row.get("_row_number") or source.get("row") or (row_match.group(0) if row_match else "1")
+                values = {
+                    "shelf": source_shelf if legacy_schema else planogram_row.get("shelf", source_shelf),
+                    "row": row_value,
+                    "slot": planogram_row.get("position", "1"),
+                    "expected_sku": planogram_row.get("sku", ""),
+                    "facing_count": planogram_row.get("facing_count", planogram_row.get("expected_facings", "0")),
+                    "position": planogram_row.get("position", "1"),
+                    "sku": planogram_row.get("sku", ""),
+                    "expected_facings": planogram_row.get("expected_facings", planogram_row.get("facing_count", "0")),
+                    "min_price": planogram_row.get("min_price", ""),
+                    "store_id": source.get("store_id", baseline.get("store_id", "STORE001")),
+                    "planogram_id": source.get("planogram_id", baseline.get("planogram_id", "DEFAULT")),
+                }
+                for field in fields:
+                    if field in values:
+                        source[field] = values[field]
+                writer.writerow(source)
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def _persist_planogram(rows: list[dict]) -> bool:
+    try:
+        _save_planogram(rows)
+    except OSError:
+        logger.exception("Could not persist planogram")
+        flash("Planogram could not be saved. Check the data folder permissions and try again.", "error")
+        return False
+    return True
 
 
 def _allowed_file(filename: str) -> bool:
@@ -343,6 +385,32 @@ def _report_image_path(report: dict | None, key: str = "image_file") -> Path | N
     return path
 
 
+def _detected_planogram_urls(report_id: str, detected_planogram: dict) -> dict:
+    """Attach stable report-image and crop references to structured geometry findings."""
+    detected_planogram = dict(detected_planogram)
+    detected_planogram["source_image_url"] = url_for("report_image", report_id=report_id)
+    for row in detected_planogram.get("rows", []):
+        for item in row.get("slots", []):
+            if item.get("kind") == "product" and item.get("detection_index") is not None:
+                item["crop_url"] = url_for(
+                    "report_detection_crop", report_id=report_id,
+                    detection_index=int(item["detection_index"]),
+                )
+    return detected_planogram
+
+
+def _comparison_urls(report_id: str, comparison: dict) -> dict:
+    comparison = dict(comparison)
+    comparison["source_image_url"] = url_for("report_image", report_id=report_id)
+    for finding in comparison.get("findings", []):
+        if finding.get("detection_index") is not None:
+            finding["crop_url"] = url_for(
+                "report_detection_crop", report_id=report_id,
+                detection_index=int(finding["detection_index"]),
+            )
+    return comparison
+
+
 def _store_image(source, display_name: str) -> tuple[Path, int, int]:
     """Validate an image (file stream or path) and store an EXIF-upright JPEG copy in UPLOAD_DIR."""
     data = source.read() if hasattr(source, "read") else Path(source).read_bytes()
@@ -355,7 +423,7 @@ def _store_image(source, display_name: str) -> tuple[Path, int, int]:
             image = ImageOps.exif_transpose(opened).convert("RGB")
     except AuditError:
         raise
-    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError) as error:
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError, ModuleNotFoundError) as error:
         raise AuditError("The uploaded file is not a readable PNG, JPG, or WEBP image.") from error
     if image.width < 32 or image.height < 32:
         raise AuditError("That image is too small to analyze (minimum 32 x 32 pixels).")
@@ -401,12 +469,20 @@ def _test_images() -> dict[str, Path]:
 def _identify_detections(detections: list[dict], matches: list[dict], planogram: list[dict], slot_mapper) -> list[dict]:
     """Attach the calibrated SKU match and the mapped slot (if any) to each detection."""
     identified = []
+    matches_by_detection = {}
     for index, detection in enumerate(detections):
-        match = matches[index] if index < len(matches) else {}
+        if index < len(matches):
+            match = matches[index]
+            source_index = int(match.get("detection_index", detection.get("_source_detection_index", index)))
+            matches_by_detection[source_index] = match
+    for index, detection in enumerate(detections):
+        source_index = int(detection.get("_source_detection_index", index))
+        match = matches_by_detection.get(source_index, {})
         mapping = slot_mapper.map_detection(detection, planogram)
         identity = mapping.get("slot_identity")
         identified.append({
             **detection,
+            "detection_index": source_index,
             "sku": match.get("accepted_sku") or "",
             "match_status": match.get("status", "Unknown / Needs Review"),
             "slot_identity": list(identity) if identity else None,
@@ -433,13 +509,34 @@ def _downgrade_slots_with_unidentified(slots: list[dict], identified: list[dict]
             slot.update(status="Needs Review", detail=f"{unresolved[key]} unidentified object(s) in an intentionally empty slot.")
 
 
+def _downgrade_unsupported_slot_statuses(slots: list[dict], voids: list[dict], layout_trusted: bool) -> None:
+    """Require positive slot evidence before reporting a planogram result as confirmed."""
+    if not layout_trusted:
+        return
+    void_identities = {
+        tuple(str(part) for part in item.get("slot_identity", []))
+        for item in voids if item.get("slot_identity")
+    }
+    for slot in slots:
+        identity = (str(slot.get("shelf", "")), str(slot.get("row", "")), str(slot.get("slot", slot.get("position", ""))))
+        exact_void = any(len(value) >= 5 and value[-3:] == identity for value in void_identities)
+        if slot.get("sku") and exact_void:
+            slot.update(status="Missing Expected Product", detail="A void detection maps to this assigned slot.")
+        elif slot.get("status") == "Missing Expected Product":
+            slot.update(
+                status="Needs Review",
+                detail="The current detections do not provide enough supported evidence to confirm this slot status.",
+            )
+
+
 def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list[dict], slot_mapper,
                        image_width: int, image_height: int) -> list[dict]:
-    """Link each OCR price tag to a SKU: by calibrated slot, else by the identified product directly above."""
+    """Link each OCR price tag to one visible identified product using slot or geometry evidence."""
     slots_by_identity = {
         (row["store_id"], row["planogram_id"], row["physical_shelf"], str(row["row"]), str(row["slot"])): row
         for row in planogram
     }
+    used_detections: set[int] = set()
     for tag in tags:
         tag.update(sku="", slot=None, association="unassigned")
         if slot_mapper.trusted:
@@ -447,7 +544,34 @@ def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list
                 {"box": tag["box"], "image_width": image_width, "image_height": image_height}, planogram)
             row = slots_by_identity.get(tuple(mapping["slot_identity"])) if mapping.get("slot_identity") else None
             if row and row.get("sku"):
-                tag.update(sku=row["sku"], slot=f"R{row['row']}S{row['slot']}", association="calibrated slot")
+                identity = tuple(str(value) for value in mapping["slot_identity"])
+                candidates = [
+                    detection for detection in identified
+                    if detection.get("sku") and detection.get("slot_identity")
+                    and tuple(str(value) for value in detection["slot_identity"]) == identity
+                    and int(detection.get("_source_detection_index", detection.get("detection_index", -1))) not in used_detections
+                ]
+                tag_center = (tag["box"][0] + tag["box"][2]) / 2
+                candidates.sort(key=lambda detection: abs(
+                    (detection["box"][0] + detection["box"][2]) / 2 - tag_center
+                ))
+                if candidates:
+                    best = candidates[0]
+                    if len(candidates) > 1:
+                        first_distance = abs((best["box"][0] + best["box"][2]) / 2 - tag_center)
+                        second_distance = abs((candidates[1]["box"][0] + candidates[1]["box"][2]) / 2 - tag_center)
+                        if second_distance - first_distance <= max(4, 0.02 * image_width):
+                            tag.update(slot=f"R{row['row']}S{row['slot']}",
+                                       association="Needs Review (ambiguous product in mapped slot)")
+                            continue
+                    detection_index = int(best.get("_source_detection_index", best.get("detection_index", -1)))
+                    used_detections.add(detection_index)
+                    tag.update(sku=best["sku"], slot=f"R{row['row']}S{row['slot']}",
+                               associated_detection_index=detection_index,
+                               association="calibrated slot and visible product")
+                else:
+                    tag.update(slot=f"R{row['row']}S{row['slot']}",
+                               association="Needs Review (no identified product in mapped slot)")
             continue
         center_x, tag_top = (tag["box"][0] + tag["box"][2]) / 2, tag["box"][1]
         above = [
@@ -456,15 +580,27 @@ def _assign_price_tags(tags: list[dict], planogram: list[dict], identified: list
             and -0.02 * image_height <= tag_top - detection["box"][3] <= 0.25 * image_height
         ]
         if above:
-            nearest = min(above, key=lambda detection: tag_top - detection["box"][3])
-            tag.update(sku=nearest["sku"], association="nearest identified product above (heuristic)")
+            above.sort(key=lambda detection: tag_top - detection["box"][3])
+            nearest = above[0]
+            if len(above) > 1 and above[1]["sku"] != nearest["sku"] and abs(
+                (tag_top - above[1]["box"][3]) - (tag_top - nearest["box"][3])
+            ) <= 0.03 * image_height:
+                tag.update(association="Needs Review (ambiguous product)")
+            else:
+                source_index = int(nearest.get("_source_detection_index", nearest.get("detection_index", -1)))
+                if source_index in used_detections:
+                    tag.update(association="Needs Review (product already linked to another tag)")
+                else:
+                    used_detections.add(source_index)
+                    tag.update(sku=nearest["sku"], associated_detection_index=source_index,
+                               association="nearest identified product above (heuristic)")
     return tags
 
 
 def _price_results(planogram_products: list[dict], tags: list[dict]) -> list[dict]:
     observed: dict[str, list[float]] = {}
     for tag in tags:
-        if tag.get("sku"):
+        if tag.get("sku") and tag.get("price") is not None:
             observed.setdefault(tag["sku"], []).append(tag["price"])
     results = check_prices(planogram_products, {sku: max(set(values), key=values.count) for sku, values in observed.items()})
     for row in results:
@@ -472,7 +608,7 @@ def _price_results(planogram_products: list[dict], tags: list[dict]) -> list[dic
         row["tag_count"] = len(values)
         if len(set(values)) > 1:
             row["detail"] = f"Conflicting tag prices read: {sorted(set(values))}"
-        methods = {tag["association"] for tag in tags if tag.get("sku") == row["sku"]}
+        methods = {tag["association"] for tag in tags if tag.get("sku") == row["sku"] and tag.get("price") is not None}
         row["association"] = ", ".join(sorted(methods))
     return results
 
@@ -497,6 +633,47 @@ def _facing_summary(planogram: list[dict], detections: list[dict]) -> dict:
             "occlusion, depth, duplicate or missed boxes, and products outside the planogram all affect them."
         ),
     }
+
+
+def _detect_shelf_gaps(detections: list[dict], image_width: int, image_height: int) -> list[dict]:
+    """Estimate unusually wide horizontal openings between detected products, by image row."""
+    gaps = []
+    rows = CoordinateShelfMapper.cluster_detections_by_row(detections)
+    for row_number, row in enumerate(rows, start=1):
+        ordered = sorted(
+            (item for item in row if item.get("box") and len(item["box"]) == 4),
+            key=lambda item: (item["box"][0] + item["box"][2]) / 2,
+        )
+        widths = [max(0, item["box"][2] - item["box"][0]) for item in ordered]
+        if not widths:
+            continue
+        typical_width = sorted(widths)[len(widths) // 2]
+        minimum_gap = max(12, typical_width * 0.6)
+        for left, right in zip(ordered, ordered[1:]):
+            x1, x2 = left["box"][2], right["box"][0]
+            if x2 - x1 < minimum_gap:
+                continue
+            y1 = max(0, min(left["box"][1], right["box"][1]))
+            y2 = min(image_height, max(left["box"][3], right["box"][3]))
+            gaps.append({"row": row_number, "box": [max(0, x1), y1, min(image_width, x2), y2],
+                         "width": round(x2 - x1), "detail": "Unusually wide opening between detected product facings."})
+    return gaps
+
+
+def _low_stock_alerts(compliance: list[dict], threshold: int, enabled: bool, layout_trusted: bool) -> list[dict]:
+    """Flag mapped slots that are below planogram facings and at or below the alert threshold."""
+    if not enabled or not layout_trusted:
+        return []
+    return [
+        {"product": row.get("product") or f"SKU {row.get('sku')}", "sku": row.get("sku", ""),
+         "shelf": row.get("shelf", ""), "row": row.get("row", ""), "position": row.get("position", ""),
+         "observed": row["observed"], "expected": row.get("expected", 0), "threshold": threshold,
+         "detail": f"{row['observed']} visible facing(s); alert threshold is {threshold}."}
+        for row in compliance
+        if row.get("sku") and row.get("observed") is not None and row["observed"] <= threshold
+        and row["observed"] < row.get("expected", 0)
+        and row.get("status") != "Needs Review"
+    ]
 
 
 def _audit_limitations(model_info: dict, matching_audit: dict, layout_trusted: bool, price_audit: dict) -> list[str]:
@@ -549,6 +726,10 @@ def _run_audit(files, form) -> tuple[str, dict]:
     all_catalogue = _read_catalogue()
     catalogue = [product for product in all_catalogue if product.get("active", "true").casefold() == "true"]
     complete_planogram = _read_planogram()
+    requested_planogram_id = str(form.get("planogram_id", "")).strip()
+    saved_planogram_id = complete_planogram[0].get("planogram_id", "DEFAULT") if complete_planogram else "DEFAULT"
+    if requested_planogram_id and requested_planogram_id != saved_planogram_id:
+        raise AuditError("The selected planogram is no longer available. Reload the planogram and try again.", endpoint="planogram_page", status=409)
     planogram_errors = validate_planogram(complete_planogram, all_catalogue)
     if planogram_errors:
         raise AuditError("Planogram validation failed: " + " ".join(planogram_errors[:3]), endpoint="planogram_page", status=422)
@@ -568,42 +749,134 @@ def _run_audit(files, form) -> tuple[str, dict]:
         raise AuditError("Image analysis failed unexpectedly. Check the model and image, then try again.", status=500) from error
     inference_ms = round((time.perf_counter() - started) * 1000, 1)
 
+    for detection_index, detection in enumerate(detections):
+        detection["detection_index"] = detection_index
+    unique_detections, duplicate_map = suppress_duplicate_detections(detections)
+    unique_detections = [
+        {**detection, "_source_detection_index": detection["detection_index"]}
+        for detection in unique_detections
+    ]
+
+    auxiliary_audit: dict = {"requested": True, "price_tags": [], "voids": []}
+    try:
+        auxiliary_detections = detect_price_tags_and_voids(stored_path, confidence=PRICE_TAG_VOID_CONFIDENCE)
+        auxiliary_audit.update(auxiliary_detections)
+    except DetectorUnavailable as error:
+        auxiliary_audit["error"] = str(error)
+    except Exception as error:
+        logger.exception("Price-tag/void inference failed")
+        auxiliary_audit["error"] = f"Auxiliary detector failed: {error}"
+
     report_id = uuid.uuid4().hex
-    layout_trusted = bool(form.get("calibrated_layout") or form.get("test_image"))
+    layout_requested = bool(form.get("calibrated_layout") or form.get("test_image"))
+    expected_row_groups = {
+        (str(slot.get("physical_shelf", slot.get("shelf", ""))), str(slot.get("row", "")))
+        for slot in planogram
+    }
+    detected_row_count = len(CoordinateShelfMapper.cluster_detections_by_row(unique_detections, gap_ratio=0.65))
+    one_shelf_group = len({shelf for shelf, _row in expected_row_groups}) == 1
+    row_count_matches = detected_row_count == len({row for _shelf, row in expected_row_groups})
+    layout_trusted = bool(layout_requested and one_shelf_group and row_count_matches)
+    if not layout_requested:
+        layout_validation = {"requested": False, "compatible": None, "detected_rows": detected_row_count,
+                             "expected_rows": len({row for _shelf, row in expected_row_groups}),
+                             "detail": "The operator did not enable fixed-camera slot confirmation."}
+    elif layout_trusted:
+        layout_validation = {"requested": True, "compatible": True, "detected_rows": detected_row_count,
+                             "expected_rows": len({row for _shelf, row in expected_row_groups}),
+                             "detail": "Detected row count agrees with the saved planogram row count."}
+    else:
+        detail = (
+            "The saved planogram contains multiple physical shelf groups; the equal-grid mapper supports only one."
+            if not one_shelf_group else
+            f"Detected {detected_row_count} shelf rows, but the planogram defines "
+            f"{len({row for _shelf, row in expected_row_groups})}; slot mapping remains Needs Review."
+        )
+        layout_validation = {"requested": True, "compatible": False, "detected_rows": detected_row_count,
+                             "expected_rows": len({row for _shelf, row in expected_row_groups}), "detail": detail}
     slot_mapper = CoordinateShelfMapper(trusted=layout_trusted)
+    for void in auxiliary_audit.get("voids", []):
+        void["slot_identity"] = None
+        void["slot_mapping_status"] = "needs_review"
+        if layout_trusted:
+            mapping = slot_mapper.map_detection(void, planogram)
+            if mapping.get("slot_identity"):
+                void["slot_identity"] = list(mapping["slot_identity"])
+                void["slot_mapping_status"] = "calibrated location; review required"
     pipeline = _get_matching_pipeline()
     if pipeline is None:
         matching_audit = {"matches": [], "findings": [], "matching_error": "SKU matching is disabled (SHELFSENSE_MATCHER=none)."}
     else:
         try:
-            matching_audit = pipeline.run(stored_path, detections, catalogue, planogram, slot_mapper=slot_mapper)
+            matching_audit = pipeline.run(stored_path, unique_detections, catalogue, planogram, slot_mapper=slot_mapper)
         except Exception as error:
             logger.exception("SKU matching pipeline failed for report %s", report_id)
             matching_audit = {"matches": [], "findings": [], "matching_error": f"Matching pipeline error: {error}"}
-    identified = _identify_detections(detections, matching_audit.get("matches", []), planogram, slot_mapper)
+    identified = _identify_detections(unique_detections, matching_audit.get("matches", []), planogram, slot_mapper)
     names_by_sku = {product["sku"]: product.get("name") or f"SKU {product['sku']}" for product in all_catalogue}
-    for detection, enriched in zip(detections, identified):
-        # The model class ("object") stays in "label"; the catalogue identity is kept separately.
-        detection["matched_sku"] = enriched["sku"]
-        detection["product_name"] = names_by_sku.get(enriched["sku"], "") if enriched["sku"] else ""
-
-    annotated_name = None
-    try:
-        annotated_name = annotate_image(stored_path, detections, UPLOAD_DIR / f"{report_id}_annotated.jpg").name
-    except Exception:
-        logger.exception("Could not draw annotated image for report %s", report_id)
+    identified_by_source = {item["_source_detection_index"]: item for item in identified}
+    kept_source_indices = set(identified_by_source)
+    for detection in detections:
+        source_index = detection["detection_index"]
+        enriched = identified_by_source.get(source_index)
+        if enriched:
+            detection["matched_sku"] = enriched["sku"]
+            detection["product_name"] = names_by_sku.get(enriched["sku"], "") if enriched["sku"] else ""
+            detection["match_status"] = enriched["match_status"]
+            detection["slot_identity"] = enriched["slot_identity"]
+        elif source_index in duplicate_map:
+            duplicate_of = duplicate_map[source_index]
+            detection["duplicate_detection"] = True
+            detection["duplicate_of"] = duplicate_of
+            detection["matched_sku"] = ""
+            detection["match_status"] = "Duplicate overlapping box excluded from counts."
+            detection["slot_identity"] = None
+    for source_index, duplicate_of in duplicate_map.items():
+        detections[source_index]["product_name"] = detections[duplicate_of].get("product_name", "")
+    matching_audit["raw_detection_count"] = len(detections)
+    matching_audit["detection_count"] = len(unique_detections)
+    matching_audit["duplicate_detection_map"] = {str(key): value for key, value in duplicate_map.items()}
 
     price_audit: dict = {"requested": bool(form.get("price_check")) and bool(settings.get("price_verification", True)), "tags": []}
     if price_audit["requested"]:
         price_audit["engine"] = "rapidocr-onnxruntime"
-        try:
-            tags = read_price_tags(stored_path, float(settings.get("price_confidence", 0.5)))
-            price_audit["tags"] = _assign_price_tags(tags, planogram, identified, slot_mapper, image_width, image_height)
-        except OcrUnavailable as error:
-            price_audit["error"] = str(error)
-        except Exception as error:
-            logger.exception("Price OCR failed for report %s", report_id)
-            price_audit["error"] = f"OCR failed: {error}"
+        tags = []
+        for detection in auxiliary_audit.get("price_tags", []):
+            tag = {**detection, "text": "", "raw_ocr_text": "", "price": None, "parsed_price": None,
+                   "ocr_confidence": None, "ocr_status": "unreadable", "sku": "", "slot": None,
+                   "association": "Needs Review"}
+            try:
+                ocr = read_price_crop(stored_path, detection["box"], float(settings.get("price_confidence", 0.5)))
+                tag.update(ocr)
+                tag["text"] = ocr["raw_ocr_text"]
+                tag["parsed_price"] = ocr["price"]
+                if ocr["ocr_status"] == "read":
+                    _assign_price_tags([tag], planogram, identified, slot_mapper, image_width, image_height)
+            except OcrUnavailable as error:
+                price_audit["error"] = str(error)
+                tag["ocr_status"] = "unavailable"
+            except Exception as error:
+                logger.exception("OCR failed for a detected price tag in report %s", report_id)
+                price_audit.setdefault("errors", []).append(str(error))
+                tag["ocr_status"] = "error"
+            tags.append(tag)
+        price_audit["tags"] = tags
+        if price_audit.get("errors") and not price_audit.get("error"):
+            price_audit["error"] = "OCR failed for one or more detected price tags."
+    else:
+        price_audit["tags"] = [
+            {**detection, "text": "", "raw_ocr_text": "", "price": None, "parsed_price": None,
+             "ocr_confidence": None, "ocr_status": "not_requested", "sku": "", "slot": None,
+             "association": "OCR not requested"}
+            for detection in auxiliary_audit.get("price_tags", [])
+        ]
+
+    annotated_name = None
+    try:
+        annotation_detections = detections + auxiliary_audit.get("price_tags", []) + auxiliary_audit.get("voids", [])
+        annotated_name = annotate_image(stored_path, annotation_detections, UPLOAD_DIR / f"{report_id}_annotated.jpg").name
+    except Exception:
+        logger.exception("Could not draw annotated image for report %s", report_id)
 
     try:
         planogram_audit = evaluate_planogram(
@@ -613,11 +886,18 @@ def _run_audit(files, form) -> tuple[str, dict]:
         )
         if layout_trusted:
             _downgrade_slots_with_unidentified(planogram_audit["slots"], identified)
+            _downgrade_unsupported_slot_statuses(
+                planogram_audit["slots"], auxiliary_audit.get("voids", []), layout_trusted,
+            )
         compliance = planogram_audit["slots"]
         planogram_skus = {slot["sku"] for slot in planogram if slot.get("sku")}
         price_results = (
             _price_results([product for product in catalogue if product["sku"] in planogram_skus], price_audit["tags"])
             if price_audit["requested"] else []
+        )
+        score = calculate_compliance_score(
+            compliance, price_results, layout_trusted=layout_trusted,
+            price_requested=price_audit["requested"],
         )
         report = build_report(
             compliance=compliance,
@@ -625,7 +905,36 @@ def _run_audit(files, form) -> tuple[str, dict]:
             detections=detections,
             image_name=display_name,
             store_name=form.get("store", settings["default_store"]).strip() or settings["default_store"],
+            compliance_score=score,
         )
+        # Keep the existing field/API contract as an alias of the versioned score.
+        report["compliance_rate"] = score["score"]
+        report["raw_detection_count"] = len(detections)
+        report["detection_count"] = len(unique_detections)
+        report["duplicate_detection_count"] = len(duplicate_map)
+        report["duplicate_detection_map"] = {str(key): value for key, value in duplicate_map.items()}
+        shelf_gaps = (
+            _detect_shelf_gaps(unique_detections, image_width, image_height)
+            if settings.get("shelf_gap_detection") and layout_trusted else []
+        )
+        low_stock_alerts = _low_stock_alerts(
+            compliance, int(settings.get("low_stock_threshold", 2)),
+            bool(settings.get("low_stock_alerts")), layout_trusted,
+        )
+        detected_planogram = reconstruct_detected_planogram(
+            detections, auxiliary_audit.get("voids", []), price_audit.get("tags", []),
+            all_catalogue, image_width, image_height,
+            grouping_config={
+                "max_gap_ratio": settings["product_group_max_gap_ratio"],
+                "min_vertical_overlap": settings["product_group_min_vertical_overlap"],
+            },
+        )
+        detected_planogram = _detected_planogram_urls(report_id, detected_planogram)
+        planogram_comparison = compare_expected_to_detected(
+            planogram, detected_planogram, planogram_audit, price_results, layout_trusted, all_catalogue,
+            matching_audit,
+        )
+        planogram_comparison = _comparison_urls(report_id, planogram_comparison)
     except Exception as error:
         stored_path.unlink(missing_ok=True)
         logger.exception("Shelf audit report generation failed")
@@ -637,8 +946,11 @@ def _run_audit(files, form) -> tuple[str, dict]:
         schema_version=REPORT_SCHEMA_VERSION,
         created_at_iso=datetime.now(timezone.utc).isoformat(),
         planogram_name=form.get("planogram", settings["default_planogram"]).strip(),
+        planogram_id=saved_planogram_id,
         confidence_threshold=confidence,
         planogram_audit=planogram_audit,
+        detected_planogram=detected_planogram,
+        planogram_comparison=planogram_comparison,
         matching_audit=matching_audit,
         image_file=stored_path.name,
         image_path=str(stored_path.resolve()),
@@ -647,12 +959,29 @@ def _run_audit(files, form) -> tuple[str, dict]:
         image_height=image_height,
         inference_ms=inference_ms,
         model=model_info,
-        facing_summary=_facing_summary(planogram, detections),
+        auxiliary_model=auxiliary_audit.get("model"),
+        auxiliary_model_error=auxiliary_audit.get("error"),
+        void_detections=auxiliary_audit.get("voids", []),
+        price_tag_detections=auxiliary_audit.get("price_tags", []),
+        facing_summary=_facing_summary(planogram, unique_detections),
         layout_trusted=layout_trusted,
+        layout_validation=layout_validation,
         price_audit=price_audit,
+        shelf_gap_detection={
+            "enabled": bool(settings.get("shelf_gap_detection")),
+            "available": layout_trusted,
+            "gaps": shelf_gaps,
+        },
+        low_stock_alerts=low_stock_alerts,
+        low_stock_threshold=int(settings.get("low_stock_threshold", 2)),
         identified_count=sum(bool(detection["sku"]) for detection in identified),
         limitations=_audit_limitations(model_info, matching_audit, layout_trusted, price_audit),
+        raw_detection_count=len(detections),
+        duplicate_detection_count=len(duplicate_map),
+        duplicate_detection_map={str(key): value for key, value in duplicate_map.items()},
     )
+    if layout_validation.get("compatible") is False:
+        report["limitations"].append(layout_validation["detail"])
     try:
         save_audit_result(AUDIT_RESULTS_DIR, report_id, {key: value for key, value in report.items() if key != "image_path"})
         report["persisted"] = True
@@ -672,7 +1001,21 @@ def _normalize_saved_report(report_id: str, report: dict) -> dict:
     report.setdefault("compliance", [])
     report.setdefault("detections", [])
     report.setdefault("price_results", [])
+    report.setdefault("price_audit", {})
+    report.setdefault("void_detections", [])
+    report.setdefault("matching_audit", {})
+    report.setdefault("model", {})
+    report.setdefault("limitations", [])
+    report.setdefault("facing_summary", {})
+    report.setdefault("inference_ms", None)
+    report.setdefault("confidence_threshold", None)
+    report.setdefault("image_width", None)
+    report.setdefault("image_height", None)
+    report.setdefault("annotated_image", None)
     report.setdefault("detection_count", len(report["detections"]))
+    report.setdefault("raw_detection_count", report["detection_count"])
+    report.setdefault("duplicate_detection_count", 0)
+    report.setdefault("layout_validation", {})
     report.setdefault("compliant_count", sum(row.get("status") == "Compliant" for row in report["compliance"]))
     report.setdefault("compliance_rate", None)
     report.setdefault("price_unverified", sum(row.get("status") == "Unverified" for row in report["price_results"]))
@@ -681,6 +1024,13 @@ def _normalize_saved_report(report_id: str, report: dict) -> dict:
         "slot_mapping_available": False,
         "empty_slot_count": sum(row.get("status") == "Empty Slot" for row in report["compliance"]),
     })
+    if not isinstance(report.get("compliance_score"), dict):
+        report["compliance_score"] = calculate_compliance_score(
+            report.get("compliance", []), report.get("price_results", []),
+            layout_trusted=bool(report.get("layout_trusted")),
+            price_requested=bool(report.get("price_audit", {}).get("requested")),
+        )
+    report["compliance_rate"] = report["compliance_score"].get("score")
     report["persisted"] = True
     return report
 
@@ -712,13 +1062,63 @@ def dashboard():
     catalogue = _read_catalogue()
     planogram = _read_planogram()
     latest_report_id, latest_report = next(reversed(_reports.items()), (None, None))
+    if latest_report:
+        latest_report = _normalize_saved_report(latest_report_id, dict(latest_report))
+    if latest_report and not latest_report.get("detected_planogram"):
+        latest_report = dict(latest_report)
+        latest_report["detected_planogram"] = reconstruct_detected_planogram(
+            latest_report.get("detections", []), latest_report.get("void_detections", []),
+            latest_report.get("price_audit", {}).get("tags", []), catalogue,
+            int(latest_report.get("image_width") or 0), int(latest_report.get("image_height") or 0),
+            grouping_config={
+                "max_gap_ratio": _load_settings()["product_group_max_gap_ratio"],
+                "min_vertical_overlap": _load_settings()["product_group_min_vertical_overlap"],
+            },
+        )
+        latest_report["detected_planogram"] = _detected_planogram_urls(latest_report_id, latest_report["detected_planogram"])
+        latest_report["planogram_comparison"] = compare_expected_to_detected(
+            planogram, latest_report["detected_planogram"], latest_report.get("planogram_audit", {}),
+            latest_report.get("price_results", []), bool(latest_report.get("layout_trusted")), catalogue,
+            latest_report.get("matching_audit", {}),
+        )
+        latest_report["planogram_comparison"] = _comparison_urls(latest_report_id, latest_report["planogram_comparison"])
     products_by_sku = {product["sku"]: product for product in catalogue}
-    shelf_one = next(iter(dict.fromkeys(slot["shelf"] for slot in planogram)), None)
-    expected_shelf = [
-        {**slot, "product": products_by_sku.get(slot["sku"])}
-        for slot in planogram
-        if slot["shelf"] == shelf_one
-    ]
+    report_slots = {}
+    if latest_report:
+        for finding in latest_report.get("planogram_comparison", {}).get("findings", []):
+            if finding.get("slot") is not None:
+                identity = (str(finding.get("shelf", "")), str(finding.get("row", "")), str(finding["slot"]))
+                report_slots[identity] = {
+                    "status": finding["status"] if finding.get("confirmed") else "Needs Review"
+                }
+        if not report_slots:
+            audit_slots = latest_report.get("planogram_audit", {}).get("slots", []) or latest_report.get("compliance", [])
+            for audit_slot in audit_slots:
+                report_slots[(str(audit_slot.get("shelf", "")), str(audit_slot.get("row", "")),
+                              str(audit_slot.get("position", audit_slot.get("slot", ""))))] = audit_slot
+    planogram_rows = []
+    rows_by_identity = {}
+    physical_shelves = {str(slot.get("physical_shelf", "")) for slot in planogram}
+    ordered_slots = sorted(
+        planogram,
+        key=lambda item: (str(item.get("physical_shelf", "")).casefold(),
+                          int(item.get("row") or 0), int(item.get("position") or 0)),
+    )
+    for slot in ordered_slots:
+        row_identity = (str(slot.get("physical_shelf", "")), str(slot.get("row", "")))
+        row = rows_by_identity.get(row_identity)
+        if row is None:
+            row_label = slot["shelf"] if len(physical_shelves) <= 1 else f"{slot['physical_shelf']} · {slot['shelf']}"
+            row = {"shelf": row_label, "row": slot.get("row", ""), "slots": []}
+            rows_by_identity[row_identity] = row
+            planogram_rows.append(row)
+        audit_slot = report_slots.get((str(slot.get("physical_shelf", "")), str(slot.get("row", "")), str(slot["position"])))
+        row["slots"].append({
+            **slot,
+            "product": products_by_sku.get(slot["sku"]),
+            "expected_price": slot.get("min_price") or (products_by_sku.get(slot["sku"]) or {}).get("price"),
+            "audit_status": audit_slot.get("status") if audit_slot else None,
+        })
     latest_issues = []
     if latest_report:
         for row in latest_report["compliance"]:
@@ -758,6 +1158,13 @@ def dashboard():
             for row in latest_report["price_results"]
             if row["status"] == "Mismatch" and row["observed_price"] is not None
         )
+    if latest_report:
+        latest_issues.extend({**alert, "issue": "Low stock"} for alert in latest_report.get("low_stock_alerts", []))
+        latest_issues.extend(
+            {"product": "Shelf gap", "sku": "", "issue": "Shelf gap detected",
+             "detail": gap["detail"], "shelf": f"Row {gap['row']}", "position": ""}
+            for gap in latest_report.get("shelf_gap_detection", {}).get("gaps", [])
+        )
     return render_template(
         "dashboard.html",
         catalogue=catalogue,
@@ -765,7 +1172,7 @@ def dashboard():
         latest_report=latest_report,
         latest_report_id=latest_report_id,
         latest_issues=latest_issues,
-        expected_shelf=expected_shelf,
+        planogram_rows=planogram_rows,
         expected_total=sum(int(slot["expected_facings"]) for slot in planogram),
         active_product_count=sum(product.get("active", "true").lower() == "true" for product in catalogue),
         model_configured=bool(MODEL_PATH and Path(MODEL_PATH).is_file()),
@@ -791,6 +1198,36 @@ def report_image(report_id: str):
     return send_file(io.BytesIO(image_path.read_bytes()), mimetype=mime_type, download_name=image_path.name, max_age=0)
 
 
+@app.get("/reports/<report_id>/detection/<int:detection_index>/crop")
+def report_detection_crop(report_id: str, detection_index: int):
+    report = _reports.get(report_id)
+    if report is None:
+        abort(404)
+    detections = report.get("detections", [])
+    if detection_index < 0 or detection_index >= len(detections):
+        abort(404)
+    box = detections[detection_index].get("box")
+    image_path = _report_image_path(report)
+    if not isinstance(box, (list, tuple)) or len(box) != 4 or image_path is None:
+        abort(404)
+    try:
+        with Image.open(image_path) as source:
+            image = ImageOps.exif_transpose(source).convert("RGB")
+            width, height = image.size
+            left, top, right, bottom = (int(round(float(value))) for value in box)
+            left, top = max(0, min(width, left)), max(0, min(height, top))
+            right, bottom = max(0, min(width, right)), max(0, min(height, bottom))
+            if right <= left or bottom <= top:
+                abort(404)
+            crop = image.crop((left, top, right, bottom))
+            output = io.BytesIO()
+            crop.save(output, format="JPEG", quality=88)
+    except (OSError, TypeError, ValueError):
+        abort(404)
+    output.seek(0)
+    return send_file(output, mimetype="image/jpeg", download_name=f"detection-{detection_index + 1}.jpg", max_age=0)
+
+
 @app.get("/reports/<report_id>/annotated")
 def report_annotated_image(report_id: str):
     image_path = _report_image_path(_reports.get(report_id), "annotated_image")
@@ -806,6 +1243,8 @@ def upload_page():
         with Image.open(SAMPLE_IMAGE_PATH) as sample:
             example = {"name": SAMPLE_IMAGE_PATH.name, "size_kb": round(SAMPLE_IMAGE_PATH.stat().st_size / 1024),
                        "width": sample.width, "height": sample.height}
+    planogram_rows = _read_planogram()
+    active_planogram_id = request.args.get("planogram_id") or (planogram_rows[0].get("planogram_id", "DEFAULT") if planogram_rows else "DEFAULT")
     return render_template(
         "upload.html",
         page_title="Upload & Analyze",
@@ -813,6 +1252,7 @@ def upload_page():
         settings=_load_settings(),
         example=example,
         test_images=list(_test_images()),
+        planogram_id=active_planogram_id,
     )
 
 
@@ -829,6 +1269,8 @@ def planogram_page():
     total_slots = len(planogram)
     assigned_slots = sum(bool(slot.get("sku") and products_by_sku.get(slot["sku"])) for slot in planogram)
     planogram_errors = validate_planogram(planogram, catalogue)
+    planogram_id = planogram[0].get("planogram_id", "DEFAULT") if planogram else "DEFAULT"
+    next_row_number = max((int(slot.get("_row_number", 0)) for slot in planogram), default=0) + 1
     return render_template(
         "planogram.html",
         shelf_rows=shelf_rows,
@@ -837,6 +1279,8 @@ def planogram_page():
         assigned_slots=assigned_slots,
         empty_slots=total_slots - assigned_slots,
         planogram_errors=planogram_errors,
+        planogram_id=planogram_id,
+        next_row_number=next_row_number,
         page_title="Planogram",
         active_page="planogram",
     )
@@ -855,12 +1299,19 @@ def add_planogram_row():
         return redirect(url_for("planogram_page"))
     row_numbers = [int(match.group(0)) for row in rows if (match := re.search(r"\d+", str(row.get("shelf", ""))))]
     next_row_number = max(row_numbers, default=0) + 1
+    if rows and not row_numbers:
+        next_row_number = max((int(row.get("_row_number", 0)) for row in rows), default=0) + 1
+    shelf = f"Row {next_row_number}"
+    if any(str(row.get("_row_number")) == str(next_row_number) for row in rows):
+        flash("Could not determine a unique next row number.", "error")
+        return redirect(url_for("planogram_page"))
     source_shelf_id = rows[0].get("_shelf_id", "S1") if rows else "S1"
     rows.extend(
         {"shelf": shelf, "position": str(position), "slot": str(position), "sku": "", "expected_sku": "", "expected_facings": "0", "facing_count": "0", "min_price": "", "_shelf_id": source_shelf_id, "_row_number": next_row_number}
         for position in range(1, 6)
     )
-    _save_planogram(rows)
+    if not _persist_planogram(rows):
+        return redirect(url_for("planogram_page"))
     flash(f"{shelf} was added with five empty slots.", "success")
     return redirect(url_for("planogram_page"))
 
@@ -875,7 +1326,7 @@ def assign_planogram_slot():
     except ValueError:
         flash("Slot position and expected facings must be whole numbers.", "error")
         return redirect(url_for("planogram_page"))
-    if not shelf or position < 1 or facings < 1:
+    if not shelf or position < 1 or position > 5 or facings < 1:
         flash("Choose a shelf and enter positive slot and facing counts.", "error")
         return redirect(url_for("planogram_page"))
 
@@ -890,21 +1341,20 @@ def assign_planogram_slot():
 
     rows = _read_planogram()
     slot = next((row for row in rows if row["shelf"].casefold() == shelf.casefold() and row["position"] == str(position)), None)
+    replacing = bool(slot and slot.get("sku"))
     if slot is None:
-        row_match = re.search(r"\d+", shelf)
+        row_slots = [row for row in rows if row["shelf"].casefold() == shelf.casefold()]
+        if not row_slots or request.form.get("replace") == "on":
+            flash("That planogram slot no longer exists. Add a row before assigning a product.", "error")
+            return redirect(url_for("planogram_page"))
         slot = {
-            "shelf": shelf,
-            "position": str(position),
-            "sku": "",
-            "expected_facings": "0",
-            "facing_count": "0",
-            "expected_sku": "",
-            "min_price": "",
-            "_shelf_id": rows[0].get("_shelf_id", "S1") if rows else "S1",
-            "_row_number": row_match.group(0) if row_match else "1",
+            "shelf": shelf, "position": str(position), "sku": "", "expected_sku": "",
+            "expected_facings": "0", "facing_count": "0", "min_price": "",
+            "_shelf_id": row_slots[0].get("_shelf_id", "S1"), "_row_number": row_slots[0].get("_row_number", "1"),
+            "planogram_id": row_slots[0].get("planogram_id", "DEFAULT"), "store_id": row_slots[0].get("store_id", "STORE001"),
         }
         rows.append(slot)
-    elif slot.get("sku"):
+    elif slot.get("sku") and request.form.get("replace") != "on":
         flash("That slot is already assigned. Clear it before assigning another product.", "error")
         return redirect(url_for("planogram_page"))
     slot["sku"] = product["sku"]
@@ -913,14 +1363,37 @@ def assign_planogram_slot():
     slot["facing_count"] = str(facings)
     slot["min_price"] = product["price"]
     rows.sort(key=lambda row: (row["shelf"].casefold(), int(row["position"])))
-    _save_planogram(rows)
-    flash(f"{product['name']} was assigned to {shelf}, slot {position}.", "success")
+    if not _persist_planogram(rows):
+        return redirect(url_for("planogram_page"))
+    action = "was changed in" if replacing else "was assigned to"
+    flash(f"{product['name']} {action} {shelf}, slot {position}.", "success")
+    return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/slot/remove")
+def remove_planogram_slot():
+    shelf = request.form.get("shelf", "").strip()
+    position = request.form.get("position", "").strip()
+    rows = _read_planogram()
+    slot = next((row for row in rows if row["shelf"].casefold() == shelf.casefold() and row["position"] == position), None)
+    if slot is None:
+        flash("That planogram slot no longer exists.", "error")
+        return redirect(url_for("planogram_page"))
+    if not slot.get("sku"):
+        flash("That slot is already empty.", "error")
+        return redirect(url_for("planogram_page"))
+    product = next((item for item in _read_catalogue() if item["sku"] == slot["sku"]), None)
+    slot.update(sku="", expected_sku="", expected_facings="0", facing_count="0", min_price="")
+    if not _persist_planogram(rows):
+        return redirect(url_for("planogram_page"))
+    flash(f"{product['name'] if product else 'Product'} was removed from {shelf}, slot {position}.", "success")
     return redirect(url_for("planogram_page"))
 
 
 @app.post("/planogram/clear")
 def clear_planogram():
-    _save_planogram([])
+    if not _persist_planogram([]):
+        return redirect(url_for("planogram_page"))
     flash("Planogram cleared.", "success")
     return redirect(url_for("planogram_page"))
 
@@ -935,8 +1408,161 @@ def save_planogram():
     if errors:
         flash("Planogram validation failed: " + " ".join(errors[:3]), "error")
         return redirect(url_for("planogram_page"))
+    if not _persist_planogram(rows):
+        return redirect(url_for("planogram_page"))
     flash(f"Planogram saved with {len(rows)} slots.", "success")
     return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/slot/move")
+def move_planogram_slot():
+    source_shelf, source_position = request.form.get("source_shelf", "").strip(), request.form.get("source_position", "").strip()
+    target_shelf, target_position = request.form.get("target_shelf", "").strip(), request.form.get("target_position", "").strip()
+    rows = _read_planogram()
+    source = next((row for row in rows if row["shelf"] == source_shelf and row["position"] == source_position), None)
+    target = next((row for row in rows if row["shelf"] == target_shelf and row["position"] == target_position), None)
+    if source is None or target is None or not source.get("sku"):
+        flash("The product or destination slot no longer exists.", "error")
+    elif target.get("sku"):
+        flash("Choose an empty destination slot to move this product.", "error")
+    else:
+        target.update(sku=source["sku"], expected_sku=source["sku"], expected_facings=source["expected_facings"], facing_count=source["facing_count"], min_price=source.get("min_price", ""))
+        source.update(sku="", expected_sku="", expected_facings="0", facing_count="0", min_price="")
+        if not _persist_planogram(rows):
+            return redirect(url_for("planogram_page"))
+        flash(f"Product moved to {target_shelf}, slot {target_position}.", "success")
+    return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/slot/duplicate")
+def duplicate_planogram_slot():
+    source_shelf, source_position = request.form.get("source_shelf", "").strip(), request.form.get("source_position", "").strip()
+    target_shelf, target_position = request.form.get("target_shelf", "").strip(), request.form.get("target_position", "").strip()
+    rows = _read_planogram()
+    source = next((row for row in rows if row["shelf"] == source_shelf and row["position"] == source_position), None)
+    target = next((row for row in rows if row["shelf"] == target_shelf and row["position"] == target_position), None)
+    if source is None or target is None or not source.get("sku"):
+        flash("The product or destination slot no longer exists.", "error")
+    elif target.get("sku"):
+        flash("Choose an empty destination slot to duplicate this product.", "error")
+    else:
+        target.update(sku=source["sku"], expected_sku=source["sku"], expected_facings=source["expected_facings"], facing_count=source["facing_count"], min_price=source.get("min_price", ""))
+        if not _persist_planogram(rows):
+            return redirect(url_for("planogram_page"))
+        flash(f"Product duplicated to {target_shelf}, slot {target_position}.", "success")
+    return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/product/edit/<sku>")
+def edit_planogram_product(sku: str):
+    products = _read_catalogue()
+    product = next((item for item in products if item["sku"].casefold() == sku.casefold()), None)
+    if product is None:
+        flash("That catalogue product no longer exists.", "error")
+        return redirect(url_for("planogram_page"))
+    name, category, price = (request.form.get(key, "").strip() for key in ("name", "category", "price"))
+    if not name or not category or not _valid_price(price):
+        flash("Enter a product name, category, and valid non-negative price.", "error")
+        return redirect(url_for("planogram_page"))
+    product.update(name=name, category=category, price=price, model_label=request.form.get("model_label", name).strip() or name)
+    source = dict(product.get("_source", {}))
+    source.update({"product_name": name, "category": category, "expected_price": price, "name": name, "price": price})
+    image_upload = request.files.get("image")
+    if image_upload and image_upload.filename:
+        if not _allowed_file(image_upload.filename):
+            flash("Choose a PNG, JPG, JPEG, or WEBP product image.", "error")
+            return redirect(url_for("planogram_page"))
+        try:
+            with Image.open(image_upload.stream) as probe:
+                probe.verify()
+            image_upload.stream.seek(0)
+            with Image.open(image_upload.stream) as opened:
+                if opened.width * opened.height > MAX_IMAGE_PIXELS:
+                    raise ValueError("Product image exceeds the 40 megapixel limit.")
+                image = ImageOps.exif_transpose(opened).convert("RGB")
+            image_name = f"{secure_filename(sku)}.jpg"
+            image_path = DATA_DIR / "product_images" / image_name
+            image_path.parent.mkdir(parents=True, exist_ok=True)
+            image.save(image_path, format="JPEG", quality=92)
+        except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError, ModuleNotFoundError) as error:
+            flash(f"Could not read product image: {error}", "error")
+            return redirect(url_for("planogram_page"))
+        product.update(barcode=sku, image_local_path=f"product_images/{image_name}")
+        source.update(barcode=sku, image_local_path=f"product_images/{image_name}")
+    product["_source"] = source
+    _save_catalogue(products)
+    flash(f"{name} was updated in the catalogue.", "success")
+    return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/product/add")
+def create_and_assign_planogram_product():
+    name, category, price = (request.form.get(key, "").strip() for key in ("name", "category", "price"))
+    shelf, position = request.form.get("shelf", "").strip(), request.form.get("position", "").strip()
+    image_upload = request.files.get("image")
+    rows = _read_planogram()
+    target = next((row for row in rows if row["shelf"] == shelf and row["position"] == position), None)
+    if not name or not category or not _valid_price(price):
+        flash("Enter a product name, category, and valid non-negative price.", "error")
+        return redirect(url_for("planogram_page"))
+    if not image_upload or not image_upload.filename or not _allowed_file(image_upload.filename):
+        flash("Choose a PNG, JPG, JPEG, or WEBP product image.", "error")
+        return redirect(url_for("planogram_page"))
+    if target is None or target.get("sku"):
+        flash("Choose an existing empty planogram slot.", "error")
+        return redirect(url_for("planogram_page"))
+    products = _read_catalogue()
+    sku = "LOCAL" + uuid.uuid4().hex[:12].upper()
+    image_dir = DATA_DIR / "product_images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        image = Image.open(image_upload.stream)
+        image.verify()
+        image_upload.stream.seek(0)
+        with Image.open(image_upload.stream) as opened:
+            if opened.width * opened.height > MAX_IMAGE_PIXELS:
+                raise ValueError("Product image exceeds the 40 megapixel limit.")
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+        image_name = f"{sku}.jpg"
+        image.save(image_dir / image_name, format="JPEG", quality=92)
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError, ModuleNotFoundError) as error:
+        flash(f"Could not read product image: {error}", "error")
+        return redirect(url_for("planogram_page"))
+    fields = []
+    if CATALOGUE_PATH.exists():
+        with CATALOGUE_PATH.open(encoding="utf-8-sig", newline="") as csv_file:
+            fields = next(csv.reader(csv_file), [])
+    source = {field: "" for field in fields}
+    source.update(sku=sku, name=name, product_name=name, category=category, price=price, expected_price=price,
+                  brand="", model_label=name.casefold(), active="true", barcode=sku,
+                  image_local_path=f"product_images/{image_name}")
+    products.append({"sku": sku, "name": name, "category": category, "brand": "", "pack_size": "", "price": price,
+                     "model_label": name.casefold(), "active": "true", "barcode": sku,
+                     "image_local_path": f"product_images/{image_name}", "_source": source})
+    _save_catalogue(products)
+    target.update(sku=sku, expected_sku=sku, expected_facings="1", facing_count="1", min_price=price)
+    if not _persist_planogram(rows):
+        return redirect(url_for("planogram_page"))
+    flash(f"{name} was added to the catalogue and assigned to {shelf}, slot {position}.", "success")
+    return redirect(url_for("planogram_page"))
+
+
+@app.post("/planogram/apply")
+def apply_planogram_to_analysis():
+    rows = _read_planogram()
+    errors = validate_planogram(rows, _read_catalogue())
+    if errors:
+        flash("Planogram validation failed: " + " ".join(errors[:3]), "error")
+        return redirect(url_for("planogram_page"))
+    try:
+        _save_planogram(rows)
+    except OSError:
+        logger.exception("Could not save planogram before analysis")
+        flash("Planogram could not be saved. Check the data folder permissions and try again.", "error")
+        return redirect(url_for("planogram_page"))
+    planogram_id = rows[0].get("planogram_id", "DEFAULT") if rows else "DEFAULT"
+    flash(f"Planogram {planogram_id} is saved and ready for analysis.", "success")
+    return redirect(url_for("upload_page", planogram_id=planogram_id))
 
 
 @app.post("/analyze")
@@ -1020,7 +1646,7 @@ def catalogue_page():
 @app.get("/catalogue/image/<barcode>")
 def catalogue_product_image(barcode: str):
     product = next(
-        (item for item in _read_catalogue() if item.get("barcode") == barcode),
+        (item for item in _read_catalogue() if item.get("barcode") == barcode or item.get("sku") == barcode),
         None,
     )
     if product is None or not product.get("image_local_path"):
@@ -1106,15 +1732,12 @@ def import_catalogue():
 
 @app.get("/reports")
 def reports_page():
-    reports = list(reversed(list(_reports.items())))
-    trend_reports = [(report_id, report) for report_id, report in reports if report.get("compliance_rate") is not None]
+    reports = [
+        (report_id, _normalize_saved_report(report_id, dict(report)))
+        for report_id, report in reversed(list(_reports.items()))
+    ]
+    trend_reports = [(report_id, report) for report_id, report in reports if report.get("compliance_score", {}).get("score") is not None]
     confirmed_statuses = {"Compliant", "Misplaced", "Missing Expected Product", "Unexpected Product"}
-    total_placements = sum(
-        row.get("status") in confirmed_statuses
-        for _, report in reports
-        for row in report.get("compliance", [])
-    )
-    compliant = sum(report["compliant_count"] for _, report in reports)
     issue_count = sum(
         row.get("status") in {"Misplaced", "Missing Expected Product", "Unexpected Product"}
         for _, report in reports
@@ -1128,13 +1751,16 @@ def reports_page():
     by_store: dict[str, dict] = {}
     for report_id, report in reports:
         store_name = report.get("store_name", "Local Store")
-        entry = by_store.setdefault(store_name, {"store": store_name, "audits": 0, "compliance_total": 0, "placements": 0, "issues": 0})
+        entry = by_store.setdefault(store_name, {"store": store_name, "audits": 0, "score_total": 0.0, "scored_audits": 0, "placements": 0, "issues": 0})
         entry["audits"] += 1
-        entry["compliance_total"] += report["compliant_count"]
+        score = report.get("compliance_score", {}).get("score")
+        if score is not None:
+            entry["score_total"] += score
+            entry["scored_audits"] += 1
         entry["placements"] += sum(row.get("status") in confirmed_statuses for row in report.get("compliance", []))
         entry["issues"] += sum(row.get("status") in {"Misplaced", "Missing Expected Product", "Unexpected Product"} for row in report.get("compliance", []))
     store_summaries = [
-        {**store, "compliance_rate": round(store["compliance_total"] / store["placements"] * 100) if store["placements"] else None}
+        {**store, "compliance_rate": round(store["score_total"] / store["scored_audits"], 2) if store["scored_audits"] else None}
         for store in by_store.values()
     ]
     status_counts = {
@@ -1214,7 +1840,7 @@ def reports_page():
         reports=reports,
         trend_reports=trend_reports,
         audit_count=len(reports),
-        average_compliance=round(compliant / total_placements * 100) if total_placements else None,
+        average_compliance=round(sum(report["compliance_score"]["score"] for _, report in trend_reports) / len(trend_reports), 2) if trend_reports else None,
         issue_count=issue_count,
         mismatch_count=mismatch_count,
         store_summaries=store_summaries,
@@ -1235,8 +1861,8 @@ def download_reports():
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=REPORT_EXPORT_FIELDS)
     writer.writeheader()
-    for report in _reports.values():
-        writer.writerows(_report_export_rows(report))
+    for report_id, report in _reports.items():
+        writer.writerows(_report_export_rows(_normalize_saved_report(report_id, dict(report))))
     response = make_response(output.getvalue())
     response.headers["Content-Type"] = "text/csv; charset=utf-8"
     response.headers["Content-Disposition"] = "attachment; filename=shelfsense-audit-history.csv"
@@ -1271,10 +1897,14 @@ def save_settings():
         settings["price_confidence"] = float(request.form.get("price_confidence", settings["price_confidence"]))
         settings["minimum_product_height"] = int(request.form.get("minimum_product_height", settings["minimum_product_height"]))
         settings["low_stock_threshold"] = int(request.form.get("low_stock_threshold", settings["low_stock_threshold"]))
+        settings["product_group_max_gap_ratio"] = float(request.form.get("product_group_max_gap_ratio", settings["product_group_max_gap_ratio"]))
+        settings["product_group_min_vertical_overlap"] = float(request.form.get("product_group_min_vertical_overlap", settings["product_group_min_vertical_overlap"]))
         if not 0.1 <= settings["detection_confidence"] <= 0.9 or not 0.1 <= settings["price_confidence"] <= 0.95:
             raise ValueError("Confidence values are outside the allowed range.")
         if settings["minimum_product_height"] < 1 or settings["low_stock_threshold"] < 0:
             raise ValueError("Height and stock threshold must be zero or greater.")
+        if not 0 <= settings["product_group_max_gap_ratio"] <= 1 or not 0 <= settings["product_group_min_vertical_overlap"] <= 1:
+            raise ValueError("Product grouping thresholds must be between 0 and 1.")
     except ValueError as error:
         flash(f"Settings were not saved: {error}", "error")
         return redirect(url_for("settings_page"))
@@ -1292,6 +1922,10 @@ def report_detail(report_id: str):
     report = _reports.get(report_id)
     if report is None:
         abort(404)
+    report = _normalize_saved_report(report_id, dict(report))
+    structured = _report_summary(report_id, report)
+    report.setdefault("detected_planogram", structured.get("detected_planogram", {}))
+    report.setdefault("planogram_comparison", structured.get("planogram_comparison", {}))
     return render_template("report.html", report=report, report_id=report_id)
 
 
@@ -1303,7 +1937,7 @@ def download_report(report_id: str):
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=REPORT_EXPORT_FIELDS)
     writer.writeheader()
-    writer.writerows(_report_export_rows(report))
+    writer.writerows(_report_export_rows(_normalize_saved_report(report_id, dict(report))))
     response = make_response(output.getvalue())
     response.headers["Content-Type"] = "text/csv; charset=utf-8"
     response.headers["Content-Disposition"] = "attachment; filename=shelfsense-report.csv"
@@ -1331,16 +1965,47 @@ def _safe_preload() -> None:
 
 
 def _report_summary(report_id: str, report: dict) -> dict:
+    report = _normalize_saved_report(report_id, dict(report))
+    detected_planogram = report.get("detected_planogram")
+    comparison = report.get("planogram_comparison")
+    if not detected_planogram:
+        catalogue = _read_catalogue()
+        detected_planogram = _detected_planogram_urls(report_id, reconstruct_detected_planogram(
+            report.get("detections", []), report.get("void_detections", []),
+            report.get("price_audit", {}).get("tags", []), catalogue,
+            int(report.get("image_width") or 0), int(report.get("image_height") or 0),
+            grouping_config={
+                "max_gap_ratio": _load_settings()["product_group_max_gap_ratio"],
+                "min_vertical_overlap": _load_settings()["product_group_min_vertical_overlap"],
+            },
+        ))
+        comparison = compare_expected_to_detected(
+            _read_planogram(), detected_planogram, report.get("planogram_audit", {}),
+            report.get("price_results", []), bool(report.get("layout_trusted")), catalogue,
+            report.get("matching_audit", {}),
+        )
+        comparison = _comparison_urls(report_id, comparison)
     return {
         "report_id": report_id,
         "created_at": report.get("created_at"),
         "store_name": report.get("store_name"),
         "image_name": report.get("image_name"),
         "detection_count": report.get("detection_count"),
+        "raw_detection_count": report.get("raw_detection_count", report.get("detection_count")),
+        "duplicate_detection_count": report.get("duplicate_detection_count", 0),
+        "layout_validation": report.get("layout_validation", {}),
         "inference_ms": report.get("inference_ms"),
         "compliance_rate": report.get("compliance_rate"),
+        "compliance_score": report.get("compliance_score", {}),
         "report_url": url_for("report_detail", report_id=report_id),
         "annotated_image_url": url_for("report_annotated_image", report_id=report_id) if report.get("annotated_image") else None,
+        "price_audit": report.get("price_audit", {}),
+        "price_tag_detections": report.get("price_tag_detections", []),
+        "void_detections": report.get("void_detections", []),
+        "detected_planogram": detected_planogram or {},
+        "planogram_comparison": comparison or {},
+        "auxiliary_model": report.get("auxiliary_model", {}),
+        "auxiliary_model_error": report.get("auxiliary_model_error"),
     }
 
 
@@ -1353,7 +2018,20 @@ def api_health():
         except DetectorUnavailable:
             pass
         model = detector_status()
-    checks = {"model_file": bool(model.get("file_exists")), "model_load_error": model.get("load_error")}
+    auxiliary_detector = get_detector(PRICE_TAG_VOID_MODEL_PATH) if PRICE_TAG_VOID_MODEL_PATH else None
+    auxiliary_model = auxiliary_detector.info() if auxiliary_detector else {
+        "file_exists": False, "loaded": False, "load_error": "SHELFSENSE_PRICE_TAG_VOID_MODEL is not set.",
+        "class_names": [],
+    }
+    if request.args.get("load") == "1" and auxiliary_model.get("file_exists"):
+        try:
+            auxiliary_detector.load()
+        except DetectorUnavailable:
+            pass
+        auxiliary_model = auxiliary_detector.info()
+    checks = {"model_file": bool(model.get("file_exists")), "model_load_error": model.get("load_error"),
+              "auxiliary_model_file": bool(auxiliary_model.get("file_exists")),
+              "auxiliary_model_load_error": auxiliary_model.get("load_error")}
     try:
         catalogue, planogram = _read_catalogue(), _read_planogram()
         checks.update(catalogue_products=len(catalogue), planogram_slots=len(planogram),
@@ -1362,9 +2040,11 @@ def api_health():
         checks["data_error"] = str(error)
     results_target = AUDIT_RESULTS_DIR if AUDIT_RESULTS_DIR.exists() else AUDIT_RESULTS_DIR.parent
     checks["results_dir_writable"] = os.access(results_target, os.W_OK)
-    healthy = (checks["model_file"] and not checks["model_load_error"]
+    healthy = (checks["model_file"] and not checks["model_load_error"] and checks["auxiliary_model_file"]
+               and not checks["auxiliary_model_load_error"]
                and not checks.get("data_error") and not checks.get("planogram_errors"))
-    return jsonify(status="ok" if healthy else "degraded", model=model, checks=checks, saved_reports=len(_reports))
+    return jsonify(status="ok" if healthy else "degraded", model=model, auxiliary_model=auxiliary_model,
+                   checks=checks, saved_reports=len(_reports))
 
 
 @app.get("/api/reports")
@@ -1377,7 +2057,12 @@ def api_report(report_id: str):
     report = _reports.get(report_id)
     if report is None:
         return jsonify(error="Report not found."), 404
-    return jsonify({key: value for key, value in report.items() if key != "image_path"})
+    report = _normalize_saved_report(report_id, dict(report))
+    payload = {key: value for key, value in report.items() if key != "image_path"}
+    summary = _report_summary(report_id, report)
+    payload["detected_planogram"] = summary["detected_planogram"]
+    payload["planogram_comparison"] = summary["planogram_comparison"]
+    return jsonify(payload)
 
 
 @app.post("/api/analyze")
@@ -1385,7 +2070,11 @@ def api_analyze():
     try:
         report_id, report = _run_audit(request.files, request.form)
     except AuditError as error:
-        return jsonify(error=error.message), error.status
+        unavailable_score = calculate_compliance_score(
+            [], [], layout_trusted=False, price_requested=False,
+        )
+        unavailable_score["reason"] = f"Audit failed before compliance checks could be evaluated: {error.message}"
+        return jsonify(error=error.message, compliance_score=unavailable_score), error.status
     return jsonify({**_report_summary(report_id, report), "persisted": report.get("persisted"),
                     "limitations": report.get("limitations", [])}), 201
 

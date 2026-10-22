@@ -1,13 +1,13 @@
 # ShelfSense AI
 
-See [docs/DEVELOPER_REPORT.md](docs/DEVELOPER_REPORT.md) for architecture, measured accuracy, limitations, and how to replace the model.
+See [the current end-to-end report](docs/testing/END_TO_END_TEST_REPORT.md), [developer handoff](docs/testing/DEVELOPER_HANDOFF.md), [known limitations](docs/testing/KNOWN_LIMITATIONS_AND_ROADMAP.md), and [test guide](docs/testing/TEST_EXECUTION_GUIDE.md). [docs/DEVELOPER_REPORT.md](docs/DEVELOPER_REPORT.md) preserves historical findings and links to current verification.
 
 A lightweight Flask dashboard for reviewing shelf images against a store catalogue and planogram. It includes product-count compliance checks, price-checking hooks, and downloadable CSV reports.
 
 ## Run locally (Windows PowerShell)
 
 ```powershell
-cd D:\ShelfSense-AI\ShelfSense-AI-Autonomous-Retail-Compliance-Agent
+cd D:\ShelfSenseAI
 py -3.11 -m venv .venv                      # skip if .venv already exists
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe app.py
@@ -15,17 +15,19 @@ py -3.11 -m venv .venv                      # skip if .venv already exists
 
 Open http://127.0.0.1:5000. The detector preloads in the background at start-up (about 10 s on first load); `GET /api/health?load=1` reports whether it is ready.
 
-Workflow: **Upload & Analyze** (or **Use Example**) → real detector inference → annotated image with boxes and confidences → optional CLIP SKU candidates → equal-grid slot proposals → planogram comparison → report saved to `data/audit_results/<id>.json` → listed under **Reports** after restarts. **Run Product Detection** on the dashboard is a detection-only check that does not save a report.
+Workflow: **Upload & Analyze** (or **Use Example**) → real detector inference → annotated image with boxes and confidences → calibrated catalogue-image SKU candidates → equal-grid slot proposals → planogram comparison → report saved to `data/audit_results/<id>.json` → listed under **Reports** after restarts. **Run Product Detection** on the dashboard is a detection-only check that does not save a report.
 
-## Detection model (temporary)
+## Product detection model
 
-The default detector is `models/external/sku110k-yolov8n.pt`, a YOLOv8n checkpoint trained on the SKU-110K retail-shelf dataset. It has a single class, `object`: it finds product facings but does not identify SKUs itself. SKU identity comes from catalogue image matching (below), and every report lists its method and limitations. Detection labels are model classes, kept separate from catalogue SKUs.
+The default detector is `models/external/shelfsense-product-detector.pt`, the supplied Ultralytics product detector. Its checkpoint has one class, `object`: it finds product facings but does not identify SKUs itself. SKU identity comes from catalogue image matching (below), and every report lists its method and limitations. Detection labels are model classes, kept separate from catalogue SKUs.
 
 Configuration (all optional environment variables):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SHELFSENSE_MODEL` | `models/external/sku110k-yolov8n.pt` | Detector weights (any Ultralytics-loadable detection model: `.pt`, `.onnx`, ...) |
+| `SHELFSENSE_MODEL` | `models/external/shelfsense-product-detector.pt` | Detector weights (any Ultralytics-loadable detection model: `.pt`, `.onnx`, ...) |
+| `SHELFSENSE_PRICE_TAG_VOID_MODEL` | `models/external/price-tag-void.pt` | Auxiliary price-tag and void detector weights |
+| `SHELFSENSE_PRICE_TAG_VOID_CONFIDENCE` | `0.15` | Confidence threshold for the auxiliary detector |
 | `SHELFSENSE_CONFIDENCE` | `0.35` | Default confidence threshold (the upload form can override it per run) |
 | `SHELFSENSE_MAX_DETECTIONS` | `1000` | Max boxes per image (dense shelves exceed YOLO's default of 300) |
 | `SHELFSENSE_NMS_IOU` | `0.5` | Duplicate-box suppression overlap |
@@ -34,6 +36,8 @@ Configuration (all optional environment variables):
 | `SHELFSENSE_RESULTS_DIR` | `data/audit_results` | Where audit reports are saved |
 | `SHELFSENSE_UPLOAD_DIR` | `uploads` | Stored shelf images and annotated copies |
 | `SHELFSENSE_PORT` / `SHELFSENSE_HOST` | `5000` / `127.0.0.1` | Server address |
+
+The auxiliary checkpoint maps its `Price_Tag` and `void` classes from model metadata. Price-tag detections are cropped for RapidOCR; reports retain raw text, parsed prices, OCR status, and tag boxes. Void boxes are recorded separately and only receive a suggested slot location when the layout is calibrated.
 
 ### Replacing the model with your trained weights
 

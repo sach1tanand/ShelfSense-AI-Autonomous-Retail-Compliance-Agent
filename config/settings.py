@@ -12,8 +12,11 @@ DATA_DIR = ROOT_DIR / "data"
 UPLOAD_DIR = Path(os.getenv("SHELFSENSE_UPLOAD_DIR", ROOT_DIR / "uploads"))
 AUDIT_RESULTS_DIR = Path(os.getenv("SHELFSENSE_RESULTS_DIR", DATA_DIR / "audit_results"))
 SAMPLE_IMAGE_PATH = DATA_DIR / "samples" / "real_supermarket_shelf.jpg"
-DEFAULT_MODEL_PATH = ROOT_DIR / "models" / "external" / "sku110k-yolov8n.pt"
+DEFAULT_MODEL_PATH = ROOT_DIR / "models" / "external" / "shelfsense-product-detector.pt"
 MODEL_PATH = os.getenv("SHELFSENSE_MODEL") or str(DEFAULT_MODEL_PATH)
+DEFAULT_PRICE_TAG_VOID_MODEL_PATH = ROOT_DIR / "models" / "external" / "price-tag-void.pt"
+PRICE_TAG_VOID_MODEL_PATH = os.getenv("SHELFSENSE_PRICE_TAG_VOID_MODEL") or str(DEFAULT_PRICE_TAG_VOID_MODEL_PATH)
+PRICE_TAG_VOID_CONFIDENCE = float(os.getenv("SHELFSENSE_PRICE_TAG_VOID_CONFIDENCE", "0.15"))
 MODEL_DEVICE = os.getenv("SHELFSENSE_DEVICE") or None
 MAX_DETECTIONS = int(os.getenv("SHELFSENSE_MAX_DETECTIONS", "1000"))
 # NMS IoU: 0.5 removes duplicate boxes on one product; adjacent facings rarely overlap this much.

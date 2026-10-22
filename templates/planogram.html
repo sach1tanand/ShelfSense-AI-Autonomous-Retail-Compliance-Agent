@@ -17,9 +17,7 @@
     </div>
     <div class="compact-select">
       <label>Planogram</label>
-      <select>
-        <option selected>Snacks Planogram (v1)</option>
-      </select>
+      <select aria-label="Planogram"><option selected value="{{ planogram_id }}">{{ planogram_id }}</option></select>
     </div>
     <button class="button-primary planogram-primary" type="button">+ Create New Planogram</button>
   </div>
@@ -58,25 +56,37 @@
     <div class="planogram-layout-header">
       <h2>Expected Planogram Layout</h2>
       <div class="view-toggle">
-        <button class="active" type="button">Grid View</button>
-        <button type="button">Table View</button>
+        <button class="active" type="button" data-view="grid-view">Grid View</button>
+        <button type="button" data-view="table-view">Table View</button>
       </div>
     </div>
 
-    <div class="planogram-shelf-grid">
+    <div class="planogram-shelf-grid" id="grid-view">
       {% for shelf, slots in shelf_rows.items() %}
       <div class="planogram-shelf-row">
         <div class="shelf-label-card">
           <span class="shelf-row-name">{{ shelf }}</span>
-          <small>{{ ['Row 1','Row 2','Row 3'][loop.index0] if loop.index0 < 3 else 'Row ' ~ loop.index }}</small>
+          <small>{{ shelf }}</small>
         </div>
 
         <div class="planogram-slot-grid">
           {% for slot in slots|sort(attribute='position') %}
-          <article class="planogram-slot">
+          <article class="planogram-slot" data-shelf="{{ shelf }}" data-position="{{ slot.position }}" data-sku="{{ slot.sku }}" data-facings="{{ slot.expected_facings }}">
             <span class="slot-number">{{ slot.position }}</span>
             <button class="slot-menu" type="button" aria-label="slot options">⋮</button>
-            <div class="slot-product-art {% if loop.index0 % 2 == 0 %}color-a{% elif loop.index0 % 3 == 0 %}color-b{% else %}color-c{% endif %}">
+            <div class="slot-actions-popover" hidden>
+              {% if slot.product %}
+              <button type="button" data-edit-slot>Edit Product</button>
+              <button type="button" data-replace-slot>Replace Product</button>
+              <button type="button" data-move-slot>Move Slot</button>
+              <button type="button" data-duplicate-slot>Duplicate Product</button>
+              <form action="{{ url_for('remove_planogram_slot') }}" method="post" onsubmit="return confirm('Remove this product from this slot?')">
+                <input type="hidden" name="shelf" value="{{ shelf }}"><input type="hidden" name="position" value="{{ slot.position }}">
+                <button type="submit" class="remove-slot-action">Remove product</button>
+              </form>
+              {% else %}<button type="button" data-add-slot>Add Product</button>{% endif %}
+            </div>
+            <div class="slot-product-art{% if not slot.product %} slot-add-trigger{% endif %} {% if loop.index0 % 2 == 0 %}color-a{% elif loop.index0 % 3 == 0 %}color-b{% else %}color-c{% endif %}">
               {% if slot.product and slot.product.image_local_path and slot.product.barcode %}
                 <img src="{{ url_for('catalogue_product_image', barcode=slot.product.barcode) }}" alt="{{ slot.product.name }} package" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
                 <span class="slot-product-fallback" hidden>{{ slot.product.name[:2]|upper }}</span>
@@ -101,35 +111,45 @@
       {% endfor %}
     </div>
 
+    <div id="table-view" class="slot-table-wrap" hidden>
+      <table><thead><tr><th>Row</th><th>Slot</th><th>Product</th><th>SKU</th><th>Category</th><th>Price</th><th>Facings</th><th>Actions</th></tr></thead><tbody>
+      {% for shelf, slots in shelf_rows.items() %}{% for slot in slots|sort(attribute='position') %}
+      <tr><td>{{ shelf }}</td><td>{{ slot.position }}</td><td>{{ slot.product.name if slot.product else 'Empty Slot' }}</td><td>{{ slot.sku or '—' }}</td><td>{{ slot.product.category if slot.product else '—' }}</td><td>{% if slot.product and slot.product.price %}₹{{ slot.product.price }}{% else %}—{% endif %}</td><td>{{ slot.expected_facings }}</td><td>{% if slot.product %}<button type="button" data-table-replace data-shelf="{{ shelf }}" data-position="{{ slot.position }}" data-sku="{{ slot.sku }}" data-facings="{{ slot.expected_facings }}">Replace</button><form action="{{ url_for('remove_planogram_slot') }}" method="post"><input type="hidden" name="shelf" value="{{ shelf }}"><input type="hidden" name="position" value="{{ slot.position }}"><button type="submit">Remove</button></form>{% else %}<button type="button" data-table-add data-shelf="{{ shelf }}" data-position="{{ slot.position }}">Add Product</button>{% endif %}</td></tr>
+      {% endfor %}{% endfor %}
+      </tbody></table>
+    </div>
+
     <div class="planogram-actions">
       <button class="button-secondary add-row" type="button" data-open-dialog="add-row-dialog">+ Add Row</button>
       <button class="button-secondary" type="button" data-open-dialog="add-slot-dialog">+ Add Product</button>
       <form action="{{ url_for('clear_planogram') }}" method="post" onsubmit="return confirm('Clear all planogram rows and assignments?')"><button class="button-outline" type="submit">Clear Planogram</button></form>
       <form action="{{ url_for('save_planogram') }}" method="post"><button class="button-muted" type="submit">Save Planogram</button></form>
-      <a class="button-primary action-submit" href="{{ url_for('upload_page') }}">▷ Apply to Analysis</a>
+      <form action="{{ url_for('apply_planogram_to_analysis') }}" method="post" class="apply-planogram-form"><button class="button-primary action-submit" type="submit">Apply to Analysis</button></form>
     </div>
   </div>
 
+  {% set detail = namespace(slot=None) %}
+  {% for detail_row in shelf_rows.values() %}{% for detail_slot in detail_row %}{% if detail.slot is none and detail_slot.product %}{% set detail.slot = detail_slot %}{% endif %}{% endfor %}{% endfor %}
   <aside class="planogram-side panel">
     <div class="planogram-detail-header">
       <h3>Slot Details</h3>
-      <button class="link-button" type="button">Edit Slot</button>
+      {% if detail.slot %}<button class="link-button" type="button" data-shelf="{{ detail.slot.shelf }}" data-position="{{ detail.slot.position }}" data-sku="{{ detail.slot.sku }}" data-facings="{{ detail.slot.expected_facings }}">Edit Slot</button>{% endif %}
     </div>
 
     <div class="slot-detail-card">
       <div class="slot-detail-header">
-        <div class="slot-detail-badge">Lay's</div>
-        <span class="assigned-pill">Assigned</span>
+        <div class="slot-detail-badge">{{ detail.slot.product.name if detail.slot else 'No assigned product' }}</div>
+        <span class="assigned-pill">{{ 'Assigned' if detail.slot else 'Empty' }}</span>
       </div>
 
       <dl class="slot-detail-list">
-        <div><dt>Row</dt><dd>1 (Eye Level)</dd></div>
-        <div><dt>Slot</dt><dd>1</dd></div>
-        <div><dt>Product ID</dt><dd>P001</dd></div>
-        <div><dt>Expected Price</dt><dd>₹50</dd></div>
-        <div><dt>Category</dt><dd>Chips</dd></div>
-        <div><dt>Facing Count</dt><dd>3</dd></div>
-        <div><dt>Brand</dt><dd>Lay's</dd></div>
+        <div><dt>Row</dt><dd>{{ detail.slot.shelf if detail.slot else '—' }}</dd></div>
+        <div><dt>Slot</dt><dd>{{ detail.slot.position if detail.slot else '—' }}</dd></div>
+        <div><dt>Product ID</dt><dd>{{ detail.slot.sku if detail.slot else '—' }}</dd></div>
+        <div><dt>Expected Price</dt><dd>{% if detail.slot and detail.slot.product.price %}₹{{ detail.slot.product.price }}{% else %}—{% endif %}</dd></div>
+        <div><dt>Category</dt><dd>{{ detail.slot.product.category if detail.slot else '—' }}</dd></div>
+        <div><dt>Facing Count</dt><dd>{{ detail.slot.expected_facings if detail.slot else '—' }}</dd></div>
+        <div><dt>Brand</dt><dd>{{ detail.slot.product.brand or '—' if detail.slot else '—' }}</dd></div>
       </dl>
     </div>
 
@@ -176,13 +196,13 @@
 <dialog class="product-dialog" id="add-row-dialog">
   <form action="{{ url_for('add_planogram_row') }}" method="post">
     <div class="dialog-heading"><div><span class="panel-kicker">PLANOGRAM EDITOR</span><h2>Add shelf row</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Close">×</button></div>
-    <div class="form-grid"><label class="form-full">Row name<input name="shelf" placeholder="e.g. Eye Level" required maxlength="60"></label></div>
+    <div class="form-grid"><p class="form-full">A new <strong>Row {{ next_row_number }}</strong> will be created with five empty slots.</p><input type="hidden" name="shelf" value="New row"></div>
     <div class="dialog-actions"><button class="button-secondary" type="button" data-close-dialog>Cancel</button><button class="button-primary" type="submit">Add row</button></div>
   </form>
 </dialog>
 
 <dialog class="product-dialog" id="add-slot-dialog">
-  <form action="{{ url_for('assign_planogram_slot') }}" method="post">
+  <form action="{{ url_for('assign_planogram_slot') }}" method="post" id="assign-slot-form">
     <div class="dialog-heading"><div><span class="panel-kicker">PLANOGRAM EDITOR</span><h2>Assign product to slot</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="Close">×</button></div>
     <div class="form-grid">
       <label>Shelf<select name="shelf" required>{% for shelf in shelf_rows.keys() %}<option value="{{ shelf }}">{{ shelf }}</option>{% endfor %}</select></label>
@@ -190,12 +210,51 @@
       <label class="form-full">Product<select name="sku" required>{% for product in products %}<option value="{{ product.sku }}">{{ product.name }} ({{ product.sku }})</option>{% endfor %}</select></label>
       <label class="form-full">Expected facings<input name="expected_facings" type="number" min="1" value="1" required></label>
     </div>
-    <div class="dialog-actions"><button class="button-secondary" type="button" data-close-dialog>Cancel</button><button class="button-primary" type="submit">Assign product</button></div>
+    <input type="hidden" name="replace" id="replace-slot" value="">
+    <div class="dialog-actions"><button class="button-secondary" type="button" data-create-product>Create new product</button><button class="button-secondary" type="button" data-close-dialog>Cancel</button><button class="button-primary" id="assign-slot-submit" type="submit">Assign product</button></div>
   </form>
 </dialog>
 
+<dialog class="product-dialog" id="create-product-dialog"><form action="{{ url_for('create_and_assign_planogram_product') }}" method="post" enctype="multipart/form-data"><div class="dialog-heading"><div><span class="panel-kicker">NEW CATALOGUE PRODUCT</span><h2>Add product to slot</h2></div><button class="dialog-close" type="button" data-close-dialog>×</button></div><input type="hidden" name="shelf"><input type="hidden" name="position"><div class="form-grid"><label class="form-full">Product name<input name="name" required maxlength="120"></label><label>Category<input name="category" required maxlength="100"></label><label>Price<input name="price" type="number" min="0" step="0.01" required></label><label class="form-full">Product image<input name="image" type="file" accept="image/png,image/jpeg,image/webp" required></label></div><div class="dialog-actions"><button type="button" class="button-secondary" data-close-dialog>Cancel</button><button type="submit" class="button-primary">Create and assign</button></div></form></dialog>
+
+<dialog class="product-dialog" id="edit-product-dialog"><form method="post" id="edit-product-form" enctype="multipart/form-data"><div class="dialog-heading"><div><span class="panel-kicker">CATALOGUE PRODUCT</span><h2>Edit Product</h2></div><button class="dialog-close" type="button" data-close-dialog>×</button></div><div class="form-grid"><label class="form-full">Product name<input name="name" required maxlength="120"></label><label>Category<input name="category" required maxlength="100"></label><label>Price<input name="price" type="number" min="0" step="0.01" required></label><label class="form-full">Replace image (optional)<input name="image" type="file" accept="image/png,image/jpeg,image/webp"></label><input type="hidden" name="model_label"></div><div class="dialog-actions"><button type="button" class="button-secondary" data-close-dialog>Cancel</button><button type="submit" class="button-primary">Save product</button></div></form></dialog>
+
+<dialog class="product-dialog" id="target-slot-dialog"><form method="post" id="target-slot-form"><div class="dialog-heading"><div><span class="panel-kicker">PLANOGRAM EDITOR</span><h2 id="target-dialog-title"></h2></div><button class="dialog-close" type="button" data-close-dialog>×</button></div><input type="hidden" name="source_shelf"><input type="hidden" name="source_position"><input type="hidden" name="target_shelf"><input type="hidden" name="target_position"><label class="form-full">Empty destination slot<select name="target" required>{% for shelf, slots in shelf_rows.items() %}{% for slot in slots if not slot.sku %}<option value="{{ shelf }}|{{ slot.position }}">{{ shelf }}, slot {{ slot.position }}</option>{% endfor %}{% endfor %}</select></label><div class="dialog-actions"><button type="button" class="button-secondary" data-close-dialog>Cancel</button><button type="submit" class="button-primary" id="target-slot-submit"></button></div></form></dialog>
+
 <script>
-document.querySelectorAll('[data-open-dialog]').forEach(button => button.addEventListener('click', () => document.getElementById(button.dataset.openDialog).showModal()));
-document.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
+const slotDialog=document.getElementById('add-slot-dialog');
+const slotForm=document.getElementById('assign-slot-form');
+const replaceInput=document.getElementById('replace-slot');
+function openSlotDialog(slot, editing=false){
+  slotForm.elements.shelf.value=slot.shelf;
+  slotForm.elements.position.value=slot.position;
+  slotForm.elements.sku.value=editing?slot.sku:(slotForm.elements.sku.options[0]?.value||'');
+  slotForm.elements.expected_facings.value=editing?slot.facings:1;
+  replaceInput.value=editing?'on':'';
+  slotDialog.querySelector('h2').textContent=editing?'Change product in slot':'Assign product to slot';
+  document.getElementById('assign-slot-submit').textContent=editing?'Save changes':'Assign product';
+  slotDialog.showModal();
+}
+document.querySelectorAll('[data-open-dialog]').forEach(button=>button.addEventListener('click',()=>{
+  const dialog=document.getElementById(button.dataset.openDialog);
+  if(dialog===slotDialog){
+    const empty=document.querySelector('.planogram-slot[data-sku=""]');
+    if(empty) openSlotDialog({shelf:empty.dataset.shelf,position:empty.dataset.position});
+    else alert('There are no empty slots. Add a shelf row before adding another product.');
+  }else dialog.showModal();
+}));
+document.querySelectorAll('[data-close-dialog]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
+document.querySelectorAll('.slot-menu').forEach(button=>button.addEventListener('click',()=>{const menu=button.nextElementSibling;menu.hidden=!menu.hidden;}));
+document.querySelectorAll('[data-add-slot]').forEach(button=>button.addEventListener('click',()=>{const slot=button.closest('.planogram-slot');openSlotDialog({shelf:slot.dataset.shelf,position:slot.dataset.position});}));
+document.querySelectorAll('.slot-add-trigger').forEach(button=>button.addEventListener('click',()=>{const slot=button.closest('.planogram-slot');openSlotDialog({shelf:slot.dataset.shelf,position:slot.dataset.position});}));
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(item=>item.classList.toggle('active',item===button));document.getElementById('grid-view').hidden=button.dataset.view!=='grid-view';document.getElementById('table-view').hidden=button.dataset.view!=='table-view';}));
+function openCreateProduct(shelf,position){const form=document.querySelector('#create-product-dialog form');form.elements.shelf.value=shelf;form.elements.position.value=position;slotDialog.close();document.getElementById('create-product-dialog').showModal();}
+document.querySelector('[data-create-product]')?.addEventListener('click',()=>openCreateProduct(slotForm.elements.shelf.value,slotForm.elements.position.value));
+document.querySelectorAll('[data-table-add]').forEach(button=>button.addEventListener('click',()=>openSlotDialog({shelf:button.dataset.shelf,position:button.dataset.position})));
+document.querySelectorAll('[data-table-replace]').forEach(button=>button.addEventListener('click',()=>openSlotDialog({shelf:button.dataset.shelf,position:button.dataset.position,sku:button.dataset.sku,facings:button.dataset.facings},true)));
+document.querySelector('.planogram-detail-header .link-button')?.addEventListener('click',event=>{const slot=event.currentTarget.dataset;openSlotDialog({shelf:slot.shelf,position:slot.position,sku:slot.sku,facings:slot.facings},true);});
+document.querySelectorAll('[data-move-slot],[data-duplicate-slot]').forEach(button=>button.addEventListener('click',()=>{const slot=button.closest('.planogram-slot');const form=document.getElementById('target-slot-form');const duplicate=button.hasAttribute('data-duplicate-slot');form.action=duplicate?'{{ url_for("duplicate_planogram_slot") }}':'{{ url_for("move_planogram_slot") }}';form.elements.source_shelf.value=slot.dataset.shelf;form.elements.source_position.value=slot.dataset.position;const syncTarget=()=>{const [shelf,position]=form.elements.target.value.split('|');form.elements.target_shelf.value=shelf||'';form.elements.target_position.value=position||'';};form.elements.target.onchange=syncTarget;syncTarget();document.getElementById('target-dialog-title').textContent=duplicate?'Duplicate Product':'Move Slot';document.getElementById('target-slot-submit').textContent=duplicate?'Duplicate':'Move';document.getElementById('target-slot-dialog').showModal();}));
+document.querySelectorAll('[data-edit-slot]').forEach(button=>button.addEventListener('click',()=>{const slot=button.closest('.planogram-slot');const product={{ products|tojson }}.find(item=>item.sku===slot.dataset.sku);const form=document.getElementById('edit-product-form');form.action='/planogram/product/edit/'+encodeURIComponent(slot.dataset.sku);form.elements.name.value=product?.name||'';form.elements.category.value=product?.category||'';form.elements.price.value=product?.price||'';form.elements.model_label.value=product?.model_label||product?.name||'';document.getElementById('edit-product-dialog').showModal();}));
+document.querySelector('.apply-planogram-form')?.addEventListener('submit',event=>{const button=event.currentTarget.querySelector('button');button.disabled=true;button.textContent='Saving planogram…';});
 </script>
 {% endblock %}

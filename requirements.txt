@@ -2,7 +2,7 @@ Flask>=3.0,<4.0
 requests>=2.31,<3.0
 Pillow>=10,<13
 numpy>=1.26
-# Image inference (temporary SKU-110K YOLOv8n detector, or your own weights via SHELFSENSE_MODEL).
+# Image inference for configured Ultralytics YOLO product and price-tag/void checkpoints.
 # torch is pinned to 2.5.1 CPU: newer torch DLLs were blocked by Windows Smart App Control on the
 # development machine. The CPU index lets pip pick the "+cpu" build.
 --extra-index-url https://download.pytorch.org/whl/cpu

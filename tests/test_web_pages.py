@@ -17,6 +17,17 @@ def jpeg_bytes(size=(64, 64), color=(200, 120, 40)) -> bytes:
 
 
 class WebPageTests(unittest.TestCase):
+    def test_absence_is_review_unless_void_maps_to_assigned_slot(self):
+        slot = {"store_id": "S", "planogram_id": "P", "shelf": "A", "row": "1", "slot": "2",
+                "sku": "A1", "status": "Missing Expected Product"}
+        web_app._downgrade_unsupported_slot_statuses([slot], [], True)
+        self.assertEqual(slot["status"], "Needs Review")
+
+        slot["status"] = "Missing Expected Product"
+        void = {"slot_identity": ["S", "P", "A", "1", "2"]}
+        web_app._downgrade_unsupported_slot_statuses([slot], [void], True)
+        self.assertEqual(slot["status"], "Missing Expected Product")
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
@@ -53,6 +64,11 @@ class WebPageTests(unittest.TestCase):
         self.addCleanup(lambda: (web_app._reports.clear(), web_app._reports.update(self.old_reports)))
         web_app.app.config["TESTING"] = True
         self.client = web_app.app.test_client()
+        auxiliary = patch.object(web_app, "detect_price_tags_and_voids", return_value={
+            "price_tags": [], "voids": [], "model": {"class_names": ["Price_Tag", "void"]},
+        })
+        auxiliary.start()
+        self.addCleanup(auxiliary.stop)
 
     def test_all_navigation_pages_render(self):
         for route in ("/", "/upload", "/planogram", "/catalogue", "/reports", "/settings"):
@@ -170,6 +186,187 @@ class WebPageTests(unittest.TestCase):
         self.assertEqual(assigned["sku"], "A1")
         self.assertEqual(assigned["expected_facings"], "3")
 
+    def test_planogram_card_actions_persist_move_duplicate_replace_remove_and_reload(self):
+        (Path(self.temp_dir.name) / "planogram.csv").write_text(
+            "shelf,position,sku,expected_facings,min_price\nTop,1,A1,1,4.00\nTop,2,,,\nTop,3,,,\n",
+            encoding="utf-8",
+        )
+        move = self.client.post("/planogram/slot/move", data={"source_shelf": "Top", "source_position": "1", "target_shelf": "Top", "target_position": "2"})
+        self.assertEqual(move.status_code, 302)
+        self.assertEqual(self.client.get("/planogram").status_code, 200)
+        rows = web_app._read_planogram()
+        self.assertEqual(next(row for row in rows if row["shelf"] == "Top")["sku"], "")
+        self.assertEqual(next(row for row in rows if row["shelf"] == "Top" and row["position"] == "2")["sku"], "A1")
+        occupied_move = self.client.post("/planogram/slot/move", data={"source_shelf": "Top", "source_position": "2", "target_shelf": "Top", "target_position": "2"}, follow_redirects=True)
+        self.assertIn(b"Choose an empty destination slot", occupied_move.data)
+
+        duplicate = self.client.post("/planogram/slot/duplicate", data={"source_shelf": "Top", "source_position": "2", "target_shelf": "Top", "target_position": "3"})
+        self.assertEqual(duplicate.status_code, 302)
+        web_app._save_catalogue(web_app._read_catalogue() + [{"sku": "B2", "name": "Cereal", "category": "Breakfast", "brand": "", "pack_size": "", "price": "5.00", "model_label": "cereal", "active": "true"}])
+        replace = self.client.post("/planogram/slot/add", data={"shelf": "Top", "position": "2", "sku": "B2", "expected_facings": "2", "replace": "on"})
+        self.assertEqual(replace.status_code, 302)
+        remove = self.client.post("/planogram/slot/remove", data={"shelf": "Top", "position": "3"})
+        self.assertEqual(remove.status_code, 302)
+        rows = web_app._read_planogram()
+        self.assertEqual(next(row for row in rows if row["shelf"] == "Top" and row["position"] == "3")["sku"], "")
+        self.assertEqual(next(row for row in rows if row["shelf"] == "Top" and row["position"] == "2")["sku"], "B2")
+        self.assertEqual(next(row for row in rows if row["shelf"] == "Top" and row["position"] == "2")["expected_facings"], "2")
+
+    def test_planogram_controls_product_create_edit_and_views(self):
+        (Path(self.temp_dir.name) / "planogram.csv").write_text(
+            "shelf,position,sku,expected_facings,min_price\nTop,1,A1,1,4.00\nTop,2,,,\n",
+            encoding="utf-8",
+        )
+        page = self.client.get("/planogram")
+        for label in (b"Edit Product", b"Replace Product", b"Move Slot", b"Duplicate Product", b"table-view", b"grid-view"):
+            self.assertIn(label, page.data)
+        image = BytesIO(jpeg_bytes())
+        created = self.client.post("/planogram/product/add", data={
+            "shelf": "Top", "position": "2", "name": "Trail Mix", "category": "Snacks", "price": "3.75",
+            "image": (image, "trail.jpg"),
+        }, content_type="multipart/form-data", follow_redirects=True)
+        self.assertEqual(created.status_code, 200)
+        self.assertIn(b"Trail Mix was added", created.data)
+        product = next(item for item in web_app._read_catalogue() if item["name"] == "Trail Mix")
+        self.assertTrue((Path(self.temp_dir.name) / product["image_local_path"]).is_file())
+        slot = next(row for row in web_app._read_planogram() if row["shelf"] == "Top" and row["position"] == "2")
+        self.assertEqual(slot["sku"], product["sku"])
+        edited = self.client.post(f"/planogram/product/edit/{product['sku']}", data={"name": "Trail Mix XL", "category": "Snacks", "price": "4.25", "model_label": "trail mix", "image": (BytesIO(jpeg_bytes(color=(20, 180, 100))), "trail-new.jpg")}, content_type="multipart/form-data", follow_redirects=True)
+        self.assertEqual(edited.status_code, 200)
+        edited_product = next(item for item in web_app._read_catalogue() if item["sku"] == product["sku"])
+        self.assertEqual(edited_product["price"], "4.25")
+        self.assertTrue((Path(self.temp_dir.name) / edited_product["image_local_path"]).is_file())
+
+    def test_dashboard_renders_every_saved_row_slot_and_detection_after_reload(self):
+        self.catalogue_path.write_text(
+            "sku,name,category,brand,pack_size,price,model_label,active\n"
+            "A1,An Exceptionally Long Oat Milk Product Name,Plant-based,Northstar,1 L,4.00,oat milk,true\n",
+            encoding="utf-8",
+        )
+        (Path(self.temp_dir.name) / "planogram.csv").write_text(
+            "shelf,row,slot,position,sku,expected_sku,expected_facings,facing_count,min_price\n"
+            "S1,1,1,1,A1,A1,1,1,4.00\n"
+            "S1,1,2,2,,,0,0,\n"
+            "S1,2,1,1,A1,A1,2,2,4.00\n"
+            "S2,1,1,1,,,0,0,\n",
+            encoding="utf-8",
+        )
+        shelf_image = self.upload_dir / "dashboard-test.jpg"
+        shelf_image.write_bytes(jpeg_bytes((180, 90)))
+        detections = [
+            {"label": "oat milk", "confidence": .91, "box": [index * 20, 4, index * 20 + 16, 30],
+             "image_width": 180, "image_height": 90, "matched_sku": "A1" if index in (0, 1, 5) else "",
+             "product_name": "Oat Milk" if index in (0, 1, 5) else "", "match_status": "Identified",
+             "slot_identity": ["STORE001", "DEFAULT", "S1", "1", str(index + 1)] if index in (0, 1) else None}
+            for index in range(8)
+        ]
+        web_app._reports["dashboard-layout-test"] = {
+            "created_at": "2026-10-22", "image_name": "dashboard-test.jpg", "image_file": shelf_image.name,
+            "image_width": 180, "image_height": 90, "store_name": "Test Store", "detection_count": len(detections),
+            "identified_count": 1, "detections": detections, "compliance_rate": None, "compliant_count": 0,
+            "compliance": [], "price_results": [], "low_stock_alerts": [], "shelf_gap_detection": {"gaps": []},
+            "planogram_audit": {"slot_mapping_available": True, "slots": [
+                {"shelf": "S1", "row": "1", "position": "1", "status": "Compliant"},
+            ]}, "model": {}, "confidence_threshold": .25,
+        }
+        self.addCleanup(web_app._reports.pop, "dashboard-layout-test", None)
+
+        for _ in range(2):
+            response = self.client.get("/")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data.count(b'class="dashboard-slot-card expected-slot'), 4)
+            self.assertEqual(response.data.count(b'class="dashboard-detection-card'), 8)
+            self.assertIn(b"Row 1", response.data)
+            self.assertIn(b"Row 2", response.data)
+            self.assertIn("S2 · Row 1".encode(), response.data)
+            self.assertIn(b"Inspect individual detections", response.data)
+            self.assertIn(b"UNEXPECTED PRODUCT", response.data)
+            self.assertIn(b"An Exceptionally Long Oat Milk Product Name", response.data)
+            self.assertIn(b"dashboard-product-placeholder", response.data)
+            self.assertIn(b"Empty slot", response.data)
+
+        responsive_css = (Path(web_app.app.root_path) / "static" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("@media(max-width:720px)", responsive_css)
+
+        crop_response = self.client.get("/reports/dashboard-layout-test/detection/0/crop")
+        self.assertEqual(crop_response.status_code, 200)
+        with Image.open(BytesIO(crop_response.data)) as crop:
+            self.assertEqual(crop.size, (16, 26))
+
+    def test_report_api_returns_structured_reconstructed_and_comparison_data(self):
+        web_app._reports["structured-grid-api-test"] = {
+            "created_at": "2026-10-22", "image_name": "shelf.jpg", "image_file": "shelf.jpg",
+            "image_width": 120, "image_height": 100, "detection_count": 3, "detections": [
+                {"label": "object", "confidence": .9, "box": [10, 10, 40, 80], "matched_sku": "A1", "product_name": "Oat Milk"},
+                {"label": "object", "confidence": .9, "box": [42, 10, 72, 80], "matched_sku": "A1", "product_name": "Oat Milk"},
+                {"label": "object", "confidence": .9, "box": [74, 10, 104, 80], "matched_sku": "A1", "product_name": "Oat Milk"},
+            ],
+            "void_detections": [], "price_audit": {"tags": []}, "price_results": [],
+            "planogram_audit": {"slots": [], "slot_mapping_available": False},
+            "matching_audit": {"findings": []}, "layout_trusted": False,
+        }
+        self.addCleanup(web_app._reports.pop, "structured-grid-api-test", None)
+
+        response = self.client.get("/api/reports/structured-grid-api-test")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["detected_planogram"]["row_count"], 1)
+        self.assertEqual(payload["detected_planogram"]["slot_count"], 1)
+        self.assertEqual(payload["detected_planogram"]["product_facing_count"], 3)
+        self.assertEqual(payload["detected_planogram"]["rows"][0]["slots"][0]["facing_count"], 3)
+        self.assertTrue(payload["detected_planogram"]["source_image_url"].endswith("/image"))
+        self.assertEqual(payload["detected_planogram"]["rows"][0]["slots"][0]["crop_url"],
+                         "/reports/structured-grid-api-test/detection/0/crop")
+        self.assertEqual(payload["planogram_comparison"]["summary"]["needs_review"], 1)
+        detail = self.client.get("/reports/structured-grid-api-test")
+        self.assertEqual(detail.status_code, 200)
+        self.assertIn(b"GROUPED DETECTED CELLS", detail.data)
+        self.assertIn(b"physical facings", detail.data)
+
+    def test_planogram_rejects_invalid_assignment_and_persists_clear_and_save(self):
+        invalid = self.client.post("/planogram/slot/add", data={"shelf": "Top", "position": "6", "sku": "A1", "expected_facings": "1"}, follow_redirects=True)
+        self.assertIn(b"positive slot", invalid.data)
+        duplicate = self.client.post("/planogram/slot/add", data={"shelf": "Top", "position": "1", "sku": "A1", "expected_facings": "1"}, follow_redirects=True)
+        self.assertIn(b"already assigned", duplicate.data)
+        saved = self.client.post("/planogram/save", follow_redirects=True)
+        self.assertIn(b"Planogram saved", saved.data)
+        cleared = self.client.post("/planogram/clear", follow_redirects=True)
+        self.assertIn(b"Planogram cleared", cleared.data)
+        self.assertEqual(web_app._read_planogram(), [])
+        reloaded = self.client.get("/planogram")
+        self.assertEqual(reloaded.status_code, 200)
+        self.assertIn(b"Total Slots", reloaded.data)
+
+    def test_add_row_uses_next_number_and_apply_passes_saved_planogram_id(self):
+        self.client.post("/planogram/row/add", data={"shelf": "Aisle"})
+        rows = web_app._read_planogram()
+        added = [row for row in rows if row["_row_number"] == "2"]
+        self.assertEqual(len(added), 5)
+        self.assertTrue(all(not row["sku"] and row["expected_facings"] == "0" for row in added))
+        applied = self.client.post("/planogram/apply")
+        self.assertEqual(applied.status_code, 302)
+        self.assertIn("planogram_id", applied.location)
+        upload = self.client.get(applied.location)
+        self.assertIn(b'name="planogram_id" value="DEFAULT"', upload.data)
+
+    def test_planogram_apply_reports_storage_error(self):
+        with patch.object(web_app, "_save_planogram", side_effect=OSError("disk full")):
+            response = self.client.post("/planogram/apply", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"planogram", response.data.lower())
+
+    def test_planogram_apply_rejects_stale_id_and_product_create_validates_image_and_price(self):
+        stale = self.client.post("/api/analyze", data={
+            "shelf_image": (BytesIO(jpeg_bytes()), "shelf.jpg"), "planogram_id": "OLD_PLANOGRAM",
+        }, content_type="multipart/form-data")
+        self.assertEqual(stale.status_code, 409)
+        self.assertIn("no longer available", stale.json["error"])
+        invalid = self.client.post("/planogram/product/add", data={
+            "shelf": "Top", "position": "1", "name": "Bad Product", "category": "Snacks", "price": "-1",
+        }, follow_redirects=True)
+        self.assertIn(b"valid non-negative price", invalid.data)
+
     def test_planogram_rejects_duplicate_shelf_row(self):
         response = self.client.post(
             "/planogram/row/add",
@@ -270,6 +467,8 @@ class WebPageTests(unittest.TestCase):
                 "detection_confidence": "0.60",
                 "price_confidence": "0.55",
                 "minimum_product_height": "24",
+                "product_group_max_gap_ratio": "0.30",
+                "product_group_min_vertical_overlap": "0.65",
                 "low_stock_threshold": "3",
                 "price_verification": "on",
                 "low_stock_alerts": "on",
@@ -281,6 +480,8 @@ class WebPageTests(unittest.TestCase):
         self.assertIn(b"Analysis settings saved", response.data)
         self.assertIn(b"Demo Store", response.data)
         self.assertFalse(web_app._load_settings()["shelf_gap_detection"])
+        self.assertEqual(web_app._load_settings()["product_group_max_gap_ratio"], 0.3)
+        self.assertEqual(web_app._load_settings()["product_group_min_vertical_overlap"], 0.65)
 
     def test_reports_page_and_download_include_saved_audits(self):
         web_app._reports["test-report"] = {
@@ -424,6 +625,8 @@ class WebPageTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"price_check", response.data)
+        self.assertIn(b"audit_summary", response.data)
+        self.assertIn(b"score_status", response.data)
         self.assertIn(b"detection", response.data)
         self.assertIn(b"Mismatch", response.data)
 

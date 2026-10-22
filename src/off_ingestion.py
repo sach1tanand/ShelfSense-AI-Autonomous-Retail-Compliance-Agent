@@ -144,7 +144,7 @@ def _verified_image_format(content: bytes) -> str:
         with Image.open(io.BytesIO(content)) as image:
             image.load()
             image_format = (image.format or "").upper()
-    except (UnidentifiedImageError, OSError, ValueError) as error:
+    except (UnidentifiedImageError, OSError, ValueError, ModuleNotFoundError) as error:
         raise ValueError("Response is not a readable image") from error
     extension = Image.registered_extensions()
     extensions = [ext.lower() for ext, fmt in extension.items() if fmt.upper() == image_format]

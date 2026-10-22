@@ -110,7 +110,7 @@
       <label>
         <span>Select Planogram</span>
         <select name="planogram">
-          <option>{{ settings.default_planogram }}</option>
+          <option value="{{ settings.default_planogram }}">{{ settings.default_planogram }}</option>
         </select>
       </label>
 
@@ -121,6 +121,7 @@
         </select>
       </label>
     </div>
+    <input type="hidden" name="planogram_id" value="{{ planogram_id }}">
 
     <div class="audit-options-grid">
       <div class="audit-checks-panel">

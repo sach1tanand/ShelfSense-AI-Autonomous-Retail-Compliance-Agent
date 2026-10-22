@@ -24,6 +24,7 @@ from PIL import Image
 
 import app as web_app
 from backend.matching.catalog import CatalogueEmbeddingCache, load_catalogue_references
+from backend.matching.detections import suppress_duplicate_detections
 from backend.matching.encoder import ImageEncoder, PerceptualFeatureEncoder
 from backend.matching.pipeline import ProductMatchingPipeline
 from backend.matching.planogram_compare import compare_planogram
@@ -97,6 +98,18 @@ class ProductMatchingTests(unittest.TestCase):
         ]
 
     # --- Criterion 1: Catalogue Image Loading ---
+    def test_duplicate_overlapping_detector_boxes_are_suppressed_without_merging_adjacent_facings(self):
+        detections = [
+            {"label": "object", "confidence": 0.7, "box": [10, 10, 60, 80]},
+            {"label": "object", "confidence": 0.9, "box": [11, 11, 61, 81]},
+            {"label": "object", "confidence": 0.8, "box": [62, 10, 112, 80]},
+            {"label": "other", "confidence": 0.95, "box": [11, 11, 61, 81]},
+        ]
+        unique, duplicates = suppress_duplicate_detections(detections)
+        self.assertEqual(len(unique), 3)
+        self.assertEqual(duplicates, {0: 1})
+        self.assertEqual(unique[0]["confidence"], 0.9)
+
     def test_catalogue_images_can_be_loaded(self):
         refs = load_catalogue_references(self.catalogue, self.root)
         skus = [r["sku"] for r in refs]

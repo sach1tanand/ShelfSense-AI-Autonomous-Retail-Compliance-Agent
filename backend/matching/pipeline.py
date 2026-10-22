@@ -65,11 +65,13 @@ class ProductMatchingPipeline:
             image = opened.convert("RGB")
         try:
             matches = self.recognizer.match_detections(image, detections, catalogue)
+            for index, match in enumerate(matches):
+                match["detection_index"] = int(detections[index].get("_source_detection_index", index))
             matching_error = None
         except MatchingUnavailable as error:
             matches = [
                 {
-                    "detection_index": index,
+                    "detection_index": int(detection.get("_source_detection_index", index)),
                     "detector_label": str(detection.get("label", "")),
                     "detector_confidence": detection.get("confidence"),
                     "box": detection.get("box"),

@@ -78,6 +78,16 @@ class PlanogramTests(unittest.TestCase):
         self.assertEqual(audit["detections"][0]["status"], "Unexpected Product")
         self.assertEqual(audit["detections"][0]["sku"], "8900000000003")
 
+    def test_unplanned_catalogue_product_is_assigned_to_empty_slot_when_mapper_supports_it(self):
+        target = ("STORE1", "PLAN1", "S1", "1", "3")
+        audit = evaluate_planogram(
+            self.planogram, self.catalogue, [{"label": "soda"}],
+            slot_mapper=lambda _detection, _slots: target,
+        )
+        self.assertEqual(audit["slots"][2]["status"], "Unexpected Product")
+        self.assertEqual(audit["slots"][2]["sku"], "8900000000003")
+        self.assertFalse(audit["detections"])
+
     def test_ambiguous_identity_needs_review(self):
         catalogue = [
             *self.catalogue,

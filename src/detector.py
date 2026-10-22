@@ -16,7 +16,11 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from config.settings import DETECTION_CONFIDENCE, MAX_DETECTIONS, MODEL_DEVICE, MODEL_PATH, NMS_IOU
+from config.settings import (
+    DETECTION_CONFIDENCE, MAX_DETECTIONS, MODEL_DEVICE, MODEL_PATH, NMS_IOU,
+    PRICE_TAG_VOID_CONFIDENCE,
+    PRICE_TAG_VOID_MODEL_PATH,
+)
 
 
 class DetectorUnavailable(RuntimeError):
@@ -137,6 +141,34 @@ def detect_products(
     return get_detector(MODEL_PATH).detect(image_path, confidence)
 
 
+def detect_price_tags_and_voids(image_path: str | Path, confidence: float = PRICE_TAG_VOID_CONFIDENCE) -> dict:
+    """Run the separate price-tag/void model, mapping detections by checkpoint metadata."""
+    if not PRICE_TAG_VOID_MODEL_PATH or not Path(PRICE_TAG_VOID_MODEL_PATH).is_file():
+        raise DetectorUnavailable(
+            f"Price-tag/void detector weights were not found at {PRICE_TAG_VOID_MODEL_PATH}. "
+            "Set SHELFSENSE_PRICE_TAG_VOID_MODEL to its detection checkpoint."
+        )
+    detector = get_detector(PRICE_TAG_VOID_MODEL_PATH)
+    model = detector.load()
+    class_names = getattr(model, "names", {}) or {}
+    items = class_names.items() if isinstance(class_names, dict) else enumerate(class_names)
+    by_label = {
+        str(name).strip().casefold().replace("-", "_").replace(" ", "_"): int(class_id)
+        for class_id, name in items
+    }
+    price_tag_id = by_label.get("price_tag")
+    void_id = by_label.get("void")
+    if price_tag_id is None or void_id is None:
+        raise DetectorUnavailable(
+            f"{Path(PRICE_TAG_VOID_MODEL_PATH).name} must define Price_Tag and void classes; "
+            f"checkpoint classes are {list(by_label)}."
+        )
+    detections = detector.detect(image_path, confidence)
+    price_tags = [{**item, "kind": "price_tag"} for item in detections if item["class_id"] == price_tag_id]
+    voids = [{**item, "kind": "void"} for item in detections if item["class_id"] == void_id]
+    return {"price_tags": price_tags, "voids": voids, "model": detector.info()}
+
+
 def detector_status() -> dict:
     """Describe the configured detector without forcing it to load."""
     if not MODEL_PATH:
@@ -162,11 +194,17 @@ def annotate_image(image_path: str | Path, detections: list[dict], output_path: 
         scale_x = image.width / float(detection.get("image_width") or image.width)
         scale_y = image.height / float(detection.get("image_height") or image.height)
         x1, y1, x2, y2 = box[0] * scale_x, box[1] * scale_y, box[2] * scale_x, box[3] * scale_y
-        # Green: identified catalogue product (or detection-only run); amber: matching ran but found no SKU.
-        colour = (245, 158, 11) if "matched_sku" in detection and not detection["matched_sku"] else (16, 185, 129)
+        kind = detection.get("kind")
+        # Distinct colors keep auxiliary detections visible without changing product annotations.
+        colour = (236, 72, 153) if kind == "price_tag" else (139, 92, 246) if kind == "void" else (
+            (245, 158, 11) if "matched_sku" in detection and not detection["matched_sku"] else (16, 185, 129)
+        )
         draw.rectangle((x1, y1, x2, y2), outline=colour, width=line_width)
         name = detection.get("product_name")
-        caption = f"#{index} {name[:22] + ' ' if name else ''}{float(detection.get('confidence', 0)):.2f}"
+        caption = (
+            f"{detection.get('label', kind)} {float(detection.get('confidence', 0)):.2f}"
+            if kind else f"#{index} {name[:22] + ' ' if name else ''}{float(detection.get('confidence', 0)):.2f}"
+        )
         text_box = draw.textbbox((x1, y1), caption, font=font)
         text_height = text_box[3] - text_box[1]
         top = max(0, y1 - text_height - 4)

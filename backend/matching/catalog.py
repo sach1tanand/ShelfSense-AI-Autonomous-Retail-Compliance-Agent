@@ -29,7 +29,7 @@ def load_catalogue_references(catalogue: list[dict[str, Any]], data_dir: Path) -
         try:
             with Image.open(image_path) as image:
                 image.verify()
-        except (OSError, UnidentifiedImageError, ValueError):
+        except (OSError, UnidentifiedImageError, ValueError, ModuleNotFoundError):
             continue
         references.append({"sku": sku, "name": str(product.get("name", "")), "image_path": image_path})
     return references
