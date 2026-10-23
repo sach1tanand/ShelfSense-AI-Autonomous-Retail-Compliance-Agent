@@ -38,6 +38,27 @@ def calculate_compliance_score(
         confirmed_fail = {"Misplaced", "Missing Expected Product", "Unexpected Product"}
         for row in compliance:
             status = str(row.get("status", "Needs Review"))
+            identity_only_match = (
+                layout_trusted
+                and status == "Needs Review"
+                and bool(row.get("sku_match_confirmed"))
+                and row.get("reason_code") != "unidentified_objects_in_slot"
+            )
+            if identity_only_match:
+                half_slot = per_slot / 2
+                checks.append({
+                    "category": "placement", "check_type": "sku_identity", "outcome": "pass", "weight": half_slot,
+                    "shelf": row.get("shelf", ""), "row": row.get("row", ""),
+                    "slot": row.get("slot", row.get("position", "")), "sku": row.get("sku", ""),
+                    "status": status, "reason": "Expected SKU is identified in its trusted mapped slot; facing count remains unverified.",
+                })
+                checks.append({
+                    "category": "placement", "check_type": "facing_count", "outcome": "unresolved", "weight": half_slot,
+                    "shelf": row.get("shelf", ""), "row": row.get("row", ""),
+                    "slot": row.get("slot", row.get("position", "")), "sku": row.get("sku", ""),
+                    "status": status, "reason": row.get("detail") or "Detected and expected facing counts do not agree.",
+                })
+                continue
             if not layout_trusted:
                 outcome = "unresolved"
                 reason = "Slot mapping is not trusted for this audit."
@@ -115,6 +136,10 @@ def calculate_compliance_score(
         "applicable_check_count": len(checks),
         "breakdown": breakdown,
         "weights": configured,
-        "formula": "100 * earned weighted checks / all applicable weighted checks; unresolved checks earn zero and reduce coverage.",
+        "formula": (
+            "100 * earned weighted checks / all applicable weighted checks; unresolved checks earn zero and reduce coverage. "
+            "For a trusted mapped slot with the exact expected SKU but an unresolved facing count, the placement weight is split "
+            "evenly between confirmed SKU placement and unresolved facing count."
+        ),
         "checks": checks,
     }

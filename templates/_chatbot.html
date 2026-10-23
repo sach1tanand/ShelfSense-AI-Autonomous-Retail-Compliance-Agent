@@ -1,0 +1,23 @@
+<section class="shelf-chat" id="shelf-chat" aria-label="ShelfSense AI chatbot"
+         data-report-id="{{ report_id|default(latest_report_id|default('', true), true) }}">
+  <div class="shelf-chat-panel" id="shelf-chat-panel" role="dialog" aria-modal="false" aria-labelledby="shelf-chat-title" hidden>
+    <header class="shelf-chat-header">
+      <div><span class="shelf-chat-mark" aria-hidden="true">✦</span><div><b id="shelf-chat-title">ShelfSense Assistant</b><small>Ask about audits and the app</small></div></div>
+      <button class="shelf-chat-close" id="shelf-chat-close" type="button" aria-label="Minimize chat">−</button>
+    </header>
+    <div class="shelf-chat-messages" id="shelf-chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+      <div class="shelf-chat-intro">Ask me to summarize this audit, explain a finding, or help with the ShelfSense workflow.<button class="shelf-chat-suggestion" type="button" id="shelf-chat-summarize">Summarize this audit</button></div>
+    </div>
+    <div class="shelf-chat-loading" id="shelf-chat-loading" role="status" hidden><span></span><span></span><span></span> Thinking…</div>
+    <form class="shelf-chat-form" id="shelf-chat-form">
+      <label class="visually-hidden" for="shelf-chat-input">Message</label>
+      <textarea id="shelf-chat-input" rows="1" maxlength="1500" placeholder="Ask about this audit…" required></textarea>
+      <button id="shelf-chat-send" type="submit" aria-label="Send message">Send</button>
+    </form>
+    <small class="shelf-chat-footnote">Answers use the selected report’s stored findings.</small>
+  </div>
+  <button class="shelf-chat-launcher" id="shelf-chat-launcher" type="button" aria-expanded="false" aria-controls="shelf-chat-panel">
+    <span aria-hidden="true">✦</span><span>Ask ShelfSense</span>
+  </button>
+</section>
+<script src="{{ url_for('static', filename='chatbot.js', v='20261024a') }}" defer></script>

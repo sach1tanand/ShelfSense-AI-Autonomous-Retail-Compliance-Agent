@@ -175,16 +175,15 @@ class ProductRecognizer:
                     bool(ranked)
                     and not top_is_negative
                     and threshold is not None
-                    and top_score >= threshold
-                    and margin >= margin_required
+                    and top_score > threshold
                 )
                 if accepted:
                     top_sku = ranked[0][0]
                     status = "Matched"
                     reason_code = "accepted"
-                    detail = (f"Accepted: similarity {top_score:.3f} >= threshold {threshold:.3f} and margin "
-                              f"{margin:.3f} >= {margin_required:.3f}"
-                              + (" (matched a reviewed reference photo)." if ranked[0][1][1] == "review" else "."))
+                    detail = (f"Accepted best SKU match: similarity {top_score:.3f} > threshold {threshold:.3f}. "
+                              f"Top-two gap: {margin:.3f}."
+                              + (" Matched a reviewed reference photo." if ranked[0][1][1] == "review" else ""))
                 else:
                     top_sku = None
                     status = "Unknown / Needs Review"
@@ -197,18 +196,15 @@ class ProductRecognizer:
                     elif threshold is None:
                         reason_code = "no_calibration"
                         detail = "No validation-calibrated acceptance threshold is configured; candidates are advisory only."
-                    elif top_score < threshold:
+                    elif top_score <= threshold:
                         reason_code = "below_threshold"
                         detail = (
-                            f"Top cosine similarity {top_score:.3f} is below the acceptance threshold "
+                            f"Top cosine similarity {top_score:.3f} must be greater than the acceptance threshold "
                             f"{threshold:.3f}; the product may not be in the catalogue."
                         )
                     else:
-                        reason_code = "low_margin"
-                        detail = (
-                            f"Top-two candidate margin {margin:.3f} is below the required margin "
-                            f"{margin_required:.3f}; two catalogue products look alike."
-                        )
+                        reason_code = "no_candidates"
+                        detail = "No catalogue candidates could be scored for this crop."
                 results[metadata["index"]] = {
                     "detection_index": metadata["index"],
                     "detector_label": str(metadata["detection"].get("label", "")),

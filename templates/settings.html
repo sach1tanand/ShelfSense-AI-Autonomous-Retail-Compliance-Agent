@@ -7,45 +7,34 @@
   <article class="panel settings-card" id="general"><div class="settings-card-title"><span class="settings-icon">⚙</span><div><h2>Application Settings</h2><p>Basic configuration for ShelfSense AI</p></div></div><label>Application Name<input name="application_name" value="{{ settings.application_name }}" readonly></label><label>Default Store<input name="default_store" value="{{ settings.default_store }}"></label><label>Default Planogram<input name="default_planogram" value="{{ settings.default_planogram }}"></label><label>Default Product Catalogue<input name="default_catalogue" value="{{ settings.default_catalogue }}"></label><div class="settings-two"><label>Theme<select name="theme"><option>Light</option><option {% if settings.theme == 'Dark' %}selected{% endif %}>Dark</option></select></label><label>Language<select name="language"><option>English</option></select></label></div></article>
   <article class="panel settings-card" id="analysis"><div class="settings-card-title"><span class="settings-icon">☷</span><div><h2>Analysis Settings</h2><p>Detection and shelf-audit thresholds</p></div></div><label>Detection confidence threshold <span class="setting-current">{{ '%.2f'|format(settings.detection_confidence) }}</span><input type="range" min="0.10" max="0.90" step="0.01" name="detection_confidence" value="{{ settings.detection_confidence }}" oninput="this.previousElementSibling.textContent=Number(this.value).toFixed(2)"><small>Minimum confidence used for detections</small></label><label>Price OCR confidence threshold <span class="setting-current">{{ '%.2f'|format(settings.price_confidence) }}</span><input type="range" min="0.10" max="0.95" step="0.01" name="price_confidence" value="{{ settings.price_confidence }}" oninput="this.previousElementSibling.textContent=Number(this.value).toFixed(2)"><small>For use when an OCR provider is connected</small></label><label>Minimum product height (pixels)<input name="minimum_product_height" type="number" min="1" value="{{ settings.minimum_product_height }}"></label><label class="toggle-row">Enable price verification <input type="checkbox" name="price_verification" {% if settings.price_verification %}checked{% endif %}></label><label class="toggle-row">Enable shelf-gap detection <input type="checkbox" name="shelf_gap_detection" {% if settings.shelf_gap_detection %}checked{% endif %}></label><label class="toggle-row">Flag low stock <input type="checkbox" name="low_stock_alerts" {% if settings.low_stock_alerts %}checked{% endif %}></label><label>Low-stock threshold (facings)<input name="low_stock_threshold" type="number" min="0" value="{{ settings.low_stock_threshold }}"></label></article>
   <article class="panel settings-card match-settings-card" id="matching">
-    <div class="settings-card-title"><span class="settings-icon">◎</span><div><h2>Product Matching</h2><p>How similar a shelf crop must be to a catalogue product before it is named</p></div></div>
+    <div class="settings-card-title"><span class="settings-icon">◎</span><div><h2>Product Matching</h2><p>The highest-scoring catalogue SKU is named when its similarity clears this threshold. Close alternatives remain visible for context.</p></div></div>
     <label>Match threshold <span class="setting-current" id="match-threshold-current">{{ '%.2f'|format(settings.match_threshold) }}</span>
       <input type="range" id="match-threshold" name="match_threshold" min="{{ match_threshold_range[0] }}" max="{{ match_threshold_range[1] }}" step="0.01" value="{{ settings.match_threshold }}">
       <span class="range-ends"><span>{{ '%.2f'|format(match_threshold_range[0]) }} · more products named</span>{% if calibrated.threshold is not none %}<span class="range-marker">calibrated {{ '%.2f'|format(calibrated.threshold) }}</span>{% endif %}<span>{{ '%.2f'|format(match_threshold_range[1]) }} · fewer, safer</span></span>
     </label>
-    <label>Minimum margin over the second-best product <span class="setting-current" id="match-margin-current">{{ '%.3f'|format(effective_margin) }}</span>
-      <input type="range" id="match-margin" name="match_margin" min="0" max="0.20" step="0.005" value="{{ effective_margin }}">
-      <small>Rejects crops that look almost equally like two products.{% if calibrated.margin is not none %} Calibrated: {{ '%.3f'|format(calibrated.margin) }}.{% endif %}</small>
-    </label>
     <div class="match-estimates">
-      <div><span>Synthetic validation at this threshold</span><b id="estimate-synthetic">{% if calibrated.curve %}—{% else %}Not available (recalibrate){% endif %}</b></div>
       <div><span>Your reviews at this threshold</span><b id="estimate-feedback">{% if feedback_stats.reviewed %}{{ feedback_stats.correct }} of {{ feedback_stats.accepted }} named products right{% else %}No reviews yet{% endif %}</b></div>
     </div>
     <p class="threshold-warning" id="match-warning" {% if calibrated.threshold is none or settings.match_threshold >= calibrated.threshold %}hidden{% endif %}>Below the calibrated threshold, more products are named and more of those names can be wrong. Review them in each report: every verdict also teaches the matcher.</p>
-    <button type="submit" name="match_reset" value="1" class="secondary-button">Reset to default (0.50, calibrated margin)</button>
+    <button type="submit" name="match_reset" value="1" class="secondary-button">Reset to default (0.40)</button>
     <script>
       (() => {
-        const curve = {{ calibrated.curve|tojson }}, reviews = {{ feedback_points|tojson }}, calibrated = {{ calibrated.threshold|tojson }};
-        const threshold = document.getElementById('match-threshold'), margin = document.getElementById('match-margin');
+        const reviews = {{ feedback_points|tojson }}, calibrated = {{ calibrated.threshold|tojson }};
+        const threshold = document.getElementById('match-threshold');
         const pct = value => value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`;
         function update() {
-          const t = Number(threshold.value), m = Number(margin.value);
+          const t = Number(threshold.value);
           document.getElementById('match-threshold-current').textContent = t.toFixed(2);
-          document.getElementById('match-margin-current').textContent = m.toFixed(3);
           document.getElementById('match-warning').hidden = calibrated === null || t >= calibrated;
-          if (curve.length) {
-            const point = curve.reduce((best, item) => Math.abs(item.threshold - t) < Math.abs(best.threshold - t) ? item : best);
-            document.getElementById('estimate-synthetic').textContent =
-              `precision ${pct(point.precision)} · finds ${pct(point.known_coverage)} of catalogue products`;
-          }
           if (reviews.length) {
-            const accepted = reviews.filter(item => item.similarity >= t && item.margin >= m);
+            const accepted = reviews.filter(item => item.similarity > t);
             const right = accepted.filter(item => item.correct).length;
             document.getElementById('estimate-feedback').textContent = accepted.length
               ? `${right} of ${accepted.length} named products right (${pct(right / accepted.length)}) · ${reviews.length} reviews`
               : `none of ${reviews.length} reviewed crops would be named`;
           }
         }
-        threshold.addEventListener('input', update); margin.addEventListener('input', update); update();
+        threshold.addEventListener('input', update); update();
       })();
     </script>
   </article>

@@ -505,6 +505,22 @@ def compare_expected_to_detected(
                 "observed_price": None, "price_tag": None,
                 "reason": "Detected row has no corresponding expected row; row alignment needs review.", "confirmed": False,
             })
+    # SKU recognition answers whether a catalogue product is visible. Slot
+    # confirmation separately requires a trusted layout mapping. Preserve both
+    # facts so the UI can avoid calling a recognized product unidentified while
+    # keeping its placement unconfirmed.
+    identified_skus = {
+        str(item.get("sku") or "")
+        for item in detected.get("items", [])
+        if item.get("identified") and item.get("sku")
+    }
+    for item in findings:
+        expected_sku = str(item.get("expected_sku") or "")
+        item["expected_sku_detected"] = bool(expected_sku and expected_sku in identified_skus)
+        item["identity_status"] = (
+            "Detected" if item["expected_sku_detected"] else "Not confirmed"
+        )
+
     summary = Counter()
     price_summary = Counter()
     for item in findings:
@@ -536,6 +552,9 @@ def compare_expected_to_detected(
             "voids": summary["VOID / EMPTY SLOT"], "expected_empty_slots": summary["EXPECTED EMPTY SLOT"],
             "unexpected_products": summary["UNEXPECTED PRODUCT"],
             "needs_review": summary["Needs Review"], "price_matches": price_summary["PRICE MATCH"],
+            "expected_skus_detected": sum(
+                1 for item in findings if item.get("expected_sku_detected")
+            ),
             "price_mismatches": price_summary["PRICE MISMATCH"],
             "price_unreadable": max(price_summary["PRICE UNREADABLE"], len(unreadable_tags)),
             "price_needs_review": len(price_review_tags),

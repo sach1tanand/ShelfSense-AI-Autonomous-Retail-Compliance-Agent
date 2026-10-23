@@ -143,6 +143,23 @@ class ShelfReconstructionTests(unittest.TestCase):
         self.assertEqual(result["findings"][0]["expected_price"], "20.00")
         self.assertFalse(result["findings"][1]["confirmed"])
 
+    def test_untrusted_mapping_reports_exact_expected_sku_seen_without_confirming_placement(self):
+        planogram = [{
+            "physical_shelf": "A", "shelf": "Row 1", "row": "1", "position": "1", "sku": "A1",
+        }]
+        detected = reconstruct_detected_planogram(
+            [{"box": [20, 10, 80, 80], "matched_sku": "A1", "product_name": "Oats"}],
+            [], [], [{"sku": "A1", "name": "Oats"}], 100, 120,
+        )
+
+        result = compare_expected_to_detected(planogram, detected, {}, [], False)
+        finding = result["findings"][0]
+
+        self.assertTrue(finding["expected_sku_detected"])
+        self.assertEqual(finding["identity_status"], "Detected")
+        self.assertEqual(finding["status"], "Needs Review")
+        self.assertFalse(finding["confirmed"])
+
     def test_price_mismatch_requires_trusted_slot_identity_and_readable_unique_tag(self):
         identity = ["S", "P", "A", "1", "1"]
         planogram = [{

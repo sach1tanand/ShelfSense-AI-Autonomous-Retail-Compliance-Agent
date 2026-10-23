@@ -22,6 +22,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 
 from backend.matching.calibration import file_fingerprint, load_runtime_calibration
+from backend.chatbot import ChatProviderError, audit_context as build_chat_audit_context, chat_configured, generate_reply as generate_chat_reply
 from backend.matching.diagnostics import build_pipeline_diagnostics
 from backend.matching.pipeline import ProductMatchingPipeline
 from backend.matching.detections import suppress_duplicate_detections
@@ -43,9 +44,11 @@ from config.settings import (
     ROOT_DIR,
     SAMPLE_IMAGE_PATH,
     SECRET_KEY,
+    SKU_MATCH_THRESHOLD,
     TEST_SET_DIR,
     UPLOAD_DIR,
 )
+from config.compliance_scoring import SCORING_VERSION
 from src.detector import (
     DetectorUnavailable, annotate_image, detect_price_tags_and_voids, detect_products, detector_status, get_detector,
 )
@@ -215,7 +218,7 @@ def _load_settings() -> dict:
     return defaults
 
 
-DEFAULT_MATCH_THRESHOLD = 0.50
+DEFAULT_MATCH_THRESHOLD = SKU_MATCH_THRESHOLD
 FALLBACK_MATCH_MARGIN = 0.05
 MATCH_THRESHOLD_RANGE = (0.30, 0.95)
 MATCH_MARGIN_RANGE = (0.0, 0.20)
@@ -576,6 +579,26 @@ def _downgrade_slots_with_unidentified(slots: list[dict], identified: list[dict]
                         detail=f"{unresolved[key]} unidentified object(s) in an intentionally empty slot.")
 
 
+def _attach_confirmed_sku_matches(slots: list[dict], identified: list[dict], layout_trusted: bool) -> None:
+    """Attach exact SKU-in-slot evidence for scoring while leaving facing review intact."""
+    if not layout_trusted:
+        return
+    confirmed = {
+        tuple(str(value) for value in item["slot_identity"])
+        for item in identified
+        if item.get("sku") and item.get("slot_identity")
+        and item.get("match_status") not in {"Unknown / Needs Review", "Needs Review"}
+    }
+    for slot in slots:
+        identity = (
+            str(slot.get("store_id", "")), str(slot.get("planogram_id", "")),
+            str(slot.get("shelf", "")), str(slot.get("row", "")),
+            str(slot.get("slot", slot.get("position", ""))),
+        )
+        if identity in confirmed and str(slot.get("sku", "")):
+            slot["sku_match_confirmed"] = True
+
+
 MIN_VOID_COVERAGE_FOR_ABSENCE = 0.5
 
 
@@ -674,17 +697,19 @@ def _read_shelf_prices(stored_path: Path, auxiliary_audit: dict, product_detecti
                "ocr_confidence": None, "ocr_status": "unreadable", "sku": "", "slot": None,
                "association": "Needs Review", "tag_source": "price_tag_model"}
         try:
-            ocr = read_price_crop(stored_path, detection["box"], min_confidence)
+            ocr = read_price_crop(stored_path, detection["box"], min_confidence, detection.get("image_width"), detection.get("image_height"))
             tag.update(ocr)
-            tag["text"] = ocr["raw_ocr_text"]
+            tag["text"] = ocr.get("text", "")
             tag["parsed_price"] = ocr["price"]
         except OcrUnavailable as error:
             result["error"] = str(error)
             tag["ocr_status"] = "unavailable"
+            tag["ocr_diagnostic"] = str(error)
         except Exception as error:
             logger.exception("OCR failed for a detected price tag in report %s", report_id)
             result.setdefault("errors", []).append(str(error))
             tag["ocr_status"] = "error"
+            tag["ocr_diagnostic"] = str(error)
         result["tags"].append(tag)
 
     def inside(reading: dict, boxes: list) -> bool:
@@ -707,7 +732,7 @@ def _read_shelf_prices(stored_path: Path, auxiliary_audit: dict, product_detecti
                 supplemented += 1
                 result["tags"].append({
                     "label": "price_tag", "box": reading["box"], "confidence": reading["confidence"],
-                    "text": reading["text"], "raw_ocr_text": reading["text"], "price": reading["price"],
+                    "text": reading["text"], "raw_ocr_text": reading.get("raw_ocr_text", reading["text"]), "price": reading["price"],
                     "parsed_price": reading["price"], "ocr_confidence": reading["confidence"],
                     "ocr_status": "read", "ocr_rule": reading["rule"], "tag_source": "full_image_ocr",
                     "sku": "", "slot": None, "association": "Needs Review",
@@ -916,8 +941,9 @@ def _audit_limitations(model_info: dict, matching_audit: dict, layout_trusted: b
         source = "operator-set" if calibration.get("threshold_source") == "operator" else "calibrated"
         limitations.append(
             f"SKU matching ({calibration.get('model_id')}) accepted {accepted} of {len(matching_audit.get('matches', []))} "
-            f"crops at the {source} threshold {calibration.get('acceptance_threshold')} / margin "
-            f"{calibration.get('minimum_margin')}; the rest stay Needs Review. Calibration used synthetic shelves, "
+            f"crops at the {source} similarity threshold {calibration.get('acceptance_threshold')}; "
+            "the highest-scoring SKU is selected even when another candidate is close. "
+            "Calibration used synthetic shelves, "
             "so accuracy on real photos may be lower."
         )
     if layout_trusted:
@@ -1103,6 +1129,7 @@ def _run_audit(files, form) -> tuple[str, dict]:
                 planogram_audit["slots"], auxiliary_audit.get("voids", []), layout_trusted,
             )
         compliance = planogram_audit["slots"]
+        _attach_confirmed_sku_matches(compliance, identified, layout_trusted)
         planogram_skus = {slot["sku"] for slot in planogram if slot.get("sku")}
         price_results = (
             _price_results([product for product in catalogue if product["sku"] in planogram_skus], price_audit["tags"])
@@ -1264,7 +1291,20 @@ def _normalize_saved_report(report_id: str, report: dict) -> dict:
         "slot_mapping_available": False,
         "empty_slot_count": sum(row.get("status") == "Empty Slot" for row in report["compliance"]),
     })
-    if not isinstance(report.get("compliance_score"), dict):
+    if (not isinstance(report.get("compliance_score"), dict)
+            or report["compliance_score"].get("version") != SCORING_VERSION):
+        reviewed_matches = [
+            {
+                "sku": detection.get("matched_sku"),
+                "slot_identity": detection.get("slot_identity"),
+                "match_status": detection.get("match_status"),
+            }
+            for detection in report.get("detections", [])
+            if detection.get("matched_sku") and detection.get("slot_identity")
+        ]
+        _attach_confirmed_sku_matches(
+            report.get("compliance", []), reviewed_matches, bool(report.get("layout_trusted"))
+        )
         report["compliance_score"] = calculate_compliance_score(
             report.get("compliance", []), report.get("price_results", []),
             layout_trusted=bool(report.get("layout_trusted")),
@@ -1322,9 +1362,28 @@ def dashboard():
             latest_report.get("matching_audit", {}),
         )
         latest_report["planogram_comparison"] = _comparison_urls(latest_report_id, latest_report["planogram_comparison"])
+    if latest_report and latest_report.get("planogram_id") in {str(slot.get("planogram_id", "")) for slot in planogram}:
+        # Rebuild comparison annotations for older saved reports too. This adds
+        # SKU-presence evidence while leaving slot confirmation gated by the
+        # report's original trusted-layout decision.
+        latest_report = dict(latest_report)
+        latest_report["planogram_comparison"] = compare_expected_to_detected(
+            planogram, latest_report.get("detected_planogram", {}),
+            latest_report.get("planogram_audit", {}), latest_report.get("price_results", []),
+            bool(latest_report.get("layout_trusted")), catalogue, latest_report.get("matching_audit", {}),
+        )
+        latest_report["planogram_comparison"] = _comparison_urls(
+            latest_report_id, latest_report["planogram_comparison"]
+        )
     products_by_sku = {product["sku"]: product for product in catalogue}
     report_slots = {}
+    detected_skus = set()
     if latest_report:
+        detected_skus = {
+            str(item.get("sku") or "")
+            for item in latest_report.get("detected_planogram", {}).get("items", [])
+            if item.get("identified") and item.get("sku")
+        }
         for finding in latest_report.get("planogram_comparison", {}).get("findings", []):
             if finding.get("slot") is not None:
                 identity = (str(finding.get("shelf", "")), str(finding.get("row", "")), str(finding["slot"]))
@@ -1353,11 +1412,17 @@ def dashboard():
             rows_by_identity[row_identity] = row
             planogram_rows.append(row)
         audit_slot = report_slots.get((str(slot.get("physical_shelf", "")), str(slot.get("row", "")), str(slot["position"])))
+        sku_detected = str(slot.get("sku") or "") in detected_skus
         row["slots"].append({
             **slot,
             "product": products_by_sku.get(slot["sku"]),
             "expected_price": slot.get("min_price") or (products_by_sku.get(slot["sku"]) or {}).get("price"),
-            "audit_status": audit_slot.get("status") if audit_slot else None,
+            "sku_detected": sku_detected,
+            "audit_status": (
+                audit_slot.get("status") if audit_slot and audit_slot.get("status") != "Needs Review"
+                else "SKU detected · placement unverified" if sku_detected
+                else audit_slot.get("status") if audit_slot else None
+            ),
         })
     latest_issues = []
     if latest_report:
@@ -1638,6 +1703,8 @@ def reanalyze_report(report_id: str):
     if report.get("confidence_threshold"):
         form["confidence_threshold"] = str(report["confidence_threshold"])
     if options.get("calibrated_layout", report.get("layout_validation", {}).get("requested")):
+        form["calibrated_layout"] = "on"
+    if request.form.get("confirm_layout") == "on":
         form["calibrated_layout"] = "on"
     if options.get("price_check", report.get("price_audit", {}).get("requested")):
         form["price_check"] = "on"
@@ -2381,11 +2448,23 @@ def report_detail(report_id: str):
     report.setdefault("detected_planogram", structured.get("detected_planogram", {}))
     report.setdefault("planogram_comparison", structured.get("planogram_comparison", {}))
     catalogue = _read_catalogue()
+    report_planogram = [
+        slot for slot in _read_planogram()
+        if str(slot.get("planogram_id", "")) == str(report.get("planogram_id", ""))
+    ]
+    layout_validation = report.get("layout_validation") or {}
+    expected_rows = int(layout_validation.get("expected_rows") or 0)
+    detected_rows = int(layout_validation.get("detected_rows") or 0)
+    can_confirm_layout = bool(
+        not report.get("layout_trusted") and expected_rows > 0 and detected_rows == expected_rows
+        and len({str(slot.get("physical_shelf", slot.get("shelf", ""))) for slot in report_planogram}) == 1
+    )
     return render_template(
         "report.html", report=report, report_id=report_id, review_items=_review_queue(report),
         catalogue_choices=sorted(({"sku": product["sku"], "name": product.get("name") or product["sku"]}
                                   for product in catalogue), key=lambda item: item["name"].casefold()),
         can_reanalyze=_report_image_path(report) is not None,
+        can_confirm_layout=can_confirm_layout,
         page_title="Scan report", active_page="reports",
     )
 
@@ -2413,8 +2492,10 @@ def _calibration_summary() -> str:
     if calibration.get("model_id") != MATCHER_MODEL_ID:
         return "Calibration file is for a different matcher"
     metrics = calibration.get("metrics", {})
-    return (f"threshold {calibration.get('threshold')} / margin {calibration.get('minimum_margin')} · "
-            f"validation precision {metrics.get('precision')}, coverage {metrics.get('known_coverage')}")
+    active_threshold = float(_load_settings().get("match_threshold", DEFAULT_MATCH_THRESHOLD))
+    return (f"active threshold {active_threshold:.2f} · validation reference {calibration.get('threshold')} / "
+            f"margin {calibration.get('minimum_margin')} · validation precision {metrics.get('precision')}, "
+            f"coverage {metrics.get('known_coverage')}")
 
 
 def _safe_preload() -> None:
@@ -2511,6 +2592,43 @@ def api_health():
 @app.get("/api/reports")
 def api_reports():
     return jsonify(reports=[_report_summary(report_id, report) for report_id, report in reversed(list(_reports.items()))])
+
+
+@app.route("/api/chat", methods=["GET", "POST"])
+def api_chat():
+    latest_report_id = next(reversed(_reports), None)
+    if request.method == "GET":
+        configured = chat_configured()
+        return jsonify(
+            configured=configured,
+            report_id=latest_report_id,
+            message=None if configured else (
+                "AI chat is not configured. Set SHELFSENSE_CHAT_API_KEY on the server and restart ShelfSense AI."
+            ),
+        )
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify(error="Send a JSON object with a message."), 400
+    message = body.get("message")
+    if not isinstance(message, str) or not message.strip():
+        return jsonify(error="Enter a message to continue."), 400
+    if len(message) > 1500:
+        return jsonify(error="Messages must be 1,500 characters or fewer."), 400
+
+    requested_report_id = body.get("report_id")
+    report_id = str(requested_report_id).strip() if requested_report_id else latest_report_id
+    report = _reports.get(report_id) if report_id else None
+    if report_id and report is None:
+        return jsonify(error="That audit report was not found."), 404
+    report = _normalize_saved_report(report_id, dict(report)) if report is not None else None
+    context = build_chat_audit_context(report_id, report)
+    try:
+        answer = generate_chat_reply(message, context, body.get("history"))
+    except ChatProviderError as error:
+        status = 503 if not chat_configured() else 502
+        return jsonify(error=str(error), configured=chat_configured()), status
+    return jsonify(reply=answer, report_id=report_id)
 
 
 @app.get("/api/reports/<report_id>")

@@ -29,6 +29,7 @@
       {% if can_reanalyze %}
       <form method="post" action="{{ url_for('reanalyze_report', report_id=report_id) }}">
         <button type="submit" class="rp-btn primary" id="reanalyze-button" title="Run this photo again with your reviews, the current catalogue and the threshold below">↻ Re-analyze <span class="rp-badge" id="review-count">{{ reviewed_items|length }}</span></button>
+        {% if can_confirm_layout %}<button type="submit" class="rp-btn" name="confirm_layout" value="on" title="Use this only if the photo is a fixed-camera front view aligned to the saved planogram">Confirm fixed-camera layout &amp; re-analyze</button>{% endif %}
       </form>
       {% endif %}
       <a class="rp-btn" href="{{ url_for('download_report', report_id=report_id) }}">⇩ CSV</a>
@@ -209,7 +210,7 @@
       {% set tags = (report.get('price_audit') or {}).get('tags', []) %}
       {% if tags %}<details style="margin-top:12px"><summary class="rp-note" style="cursor:pointer">Raw OCR readings ({{ tags|length }})</summary><div class="rp-table-wrap"><table>
         <thead><tr><th>Text</th><th>Price</th><th>OCR</th><th>Linked SKU</th><th>Slot</th><th>Method</th></tr></thead>
-        <tbody>{% for tag in tags %}<tr><td>{{ tag.raw_ocr_text or tag.text or '—' }}</td><td>{% if tag.parsed_price is not none %}₹{{ '%.2f'|format(tag.parsed_price) }}{% else %}—{% endif %}</td><td>{{ (tag.ocr_status or 'read')|replace('_', ' ')|title }}</td><td class="mono">{{ tag.sku or '—' }}</td><td>{{ tag.slot or '—' }}</td><td><small>{{ tag.association }}</small></td></tr>{% endfor %}</tbody>
+        <tbody>{% for tag in tags %}<tr><td>{{ tag.text or ('%.2f'|format(tag.parsed_price) if tag.parsed_price is not none else '—') }}</td><td>{% if tag.parsed_price is not none %}₹{{ '%.2f'|format(tag.parsed_price) }}{% else %}—{% endif %}</td><td>{{ (tag.ocr_status or 'read')|replace('_', ' ')|title }}</td><td class="mono">{{ tag.sku or '—' }}</td><td>{{ tag.slot or '—' }}</td><td><small>{{ tag.association }}</small></td></tr>{% endfor %}</tbody>
       </table></div></details>{% endif %}
     </div>
   </details>

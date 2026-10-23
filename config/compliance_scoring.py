@@ -6,7 +6,7 @@ Unresolved checks remain in the denominator with zero earned points and reduce
 coverage; this is deliberately conservative for incomplete evidence.
 """
 
-SCORING_VERSION = "1.0.0"
+SCORING_VERSION = "1.1.0"
 SCORING_WEIGHTS = {
     "placement": 0.80,
     "price": 0.20,

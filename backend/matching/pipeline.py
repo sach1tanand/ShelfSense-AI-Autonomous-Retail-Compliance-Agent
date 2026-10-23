@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from config.settings import SKU_MATCH_THRESHOLD
 
 from .calibration import load_runtime_calibration
 from .planogram_compare import compare_planogram
@@ -23,23 +24,18 @@ class ProductMatchingPipeline:
         model_id: str = "openai/clip-vit-base-patch32",
         encoder: Any = None,
         slot_mapper: Any = None,
-        acceptance_threshold: float | None = None,
+        acceptance_threshold: float | None = SKU_MATCH_THRESHOLD,
         minimum_margin: float = 0.0,
         top_k: int = 5,
         detector_fingerprint: dict[str, Any] | None = None,
     ):
         self.data_dir = Path(data_dir)
         self.calibration_path = Path(calibration_path or self.data_dir / "clip_calibration.json")
+        self.calibration = load_runtime_calibration(
+            self.calibration_path, model_id, detector_fingerprint=detector_fingerprint,
+        )
         if acceptance_threshold is None:
-            self.calibration = load_runtime_calibration(
-                self.calibration_path, model_id, detector_fingerprint=detector_fingerprint,
-            )
-            acceptance_threshold = self.calibration["threshold"]
-            if acceptance_threshold is not None:
-                minimum_margin = self.calibration["minimum_margin"]
-        else:
-            self.calibration = {"state": "explicit", "threshold": acceptance_threshold,
-                                "minimum_margin": minimum_margin, "issues": [], "payload": {}}
+            acceptance_threshold = SKU_MATCH_THRESHOLD
         self.recognizer = ProductRecognizer(
             data_dir=self.data_dir,
             cache_path=cache_path or self.data_dir / "cache" / "clip_catalogue_embeddings.json",
@@ -62,15 +58,12 @@ class ProductMatchingPipeline:
         acceptance_threshold: float | None = None,
         minimum_margin: float | None = None,
     ) -> dict[str, Any]:
-        """Match, map and compare. acceptance_threshold/minimum_margin set by an operator for this
-        run override the calibrated values; the result records which values were used and why."""
+        """Match, map and compare. Run-level settings override constructor defaults; the
+        validation calibration remains available as reference metadata."""
         slot_mapper = slot_mapper or self.slot_mapper
         threshold = self.recognizer.acceptance_threshold if acceptance_threshold is None else float(acceptance_threshold)
         margin = self.recognizer.minimum_margin if minimum_margin is None else float(minimum_margin)
-        threshold_source = (
-            "operator" if acceptance_threshold is not None or minimum_margin is not None
-            else "calibration" if self.calibration["state"] in {"valid", "stale"} else self.calibration["state"]
-        )
+        threshold_source = "operator" if acceptance_threshold is not None else "configured_default"
         with Image.open(image_path) as opened:
             image = opened.convert("RGB")
         try:
@@ -111,7 +104,7 @@ class ProductMatchingPipeline:
             "The operator confirmed the image follows the calibrated fixed-camera shelf layout."
             if mapping_trusted else
             "This mapping is not perspective-aware or calibrated against shelf boundaries.",
-            "SKU acceptance requires a labelled validation calibration file; otherwise all candidates remain Needs Review.",
+            "SKU identity uses the configured best-match similarity threshold; validation calibration is reference metadata.",
             "A product with no mapped detection is Needs Review, not Missing, because occlusion/model failure cannot be ruled out.",
         ]
         return {

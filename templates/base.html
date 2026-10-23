@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='20261023') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css', v='20261024') }}">
   {% block head %}{% endblock %}
 </head>
 <body class="workspace-page">
@@ -18,5 +19,6 @@
     {% block content %}{% endblock %}
     <footer class="footer"><span>© 2026 ShelfSense AI</span><span>Smarter shelves, better shopping <span class="footer-star">✳</span></span></footer>
   </main>
+  {% include '_chatbot.html' %}
 </body>
 </html>

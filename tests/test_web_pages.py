@@ -17,6 +17,28 @@ def jpeg_bytes(size=(64, 64), color=(200, 120, 40)) -> bytes:
 
 
 class WebPageTests(unittest.TestCase):
+    def test_report_can_explicitly_confirm_matching_fixed_camera_layout_and_reanalyze(self):
+        image_path = self.upload_dir / "layout-confirmation.jpg"
+        image_path.write_bytes(jpeg_bytes())
+        report_id = "layout-confirmation-test"
+        web_app._reports[report_id] = {
+            "created_at": "2026-10-23", "image_name": image_path.name, "image_file": image_path.name,
+            "planogram_id": "DEFAULT", "detection_count": 1, "detections": [], "compliance": [],
+            "compliance_rate": None, "compliance_score": {}, "layout_trusted": False,
+            "layout_validation": {"requested": False, "expected_rows": 1, "detected_rows": 1},
+            "detected_planogram": {"rows": [], "items": []}, "planogram_comparison": {"findings": []},
+            "matching_audit": {"matches": []}, "price_audit": {}, "price_results": [],
+        }
+        self.addCleanup(web_app._reports.pop, report_id, None)
+
+        detail = self.client.get(f"/reports/{report_id}")
+        self.assertIn(b"Confirm fixed-camera layout &amp; re-analyze", detail.data)
+        with patch.object(web_app, "_run_audit", return_value=("new-layout-confirmation", {})) as run_audit:
+            response = self.client.post(f"/reports/{report_id}/reanalyze", data={"confirm_layout": "on"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(run_audit.call_args.args[1]["calibrated_layout"], "on")
+
     def test_absence_is_review_unless_void_maps_to_assigned_slot(self):
         slot = {"store_id": "S", "planogram_id": "P", "shelf": "A", "row": "1", "slot": "2",
                 "sku": "A1", "status": "Missing Expected Product"}

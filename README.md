@@ -70,6 +70,20 @@ Slot findings (Compliant, Missing Expected Product, Misplaced, Unexpected Produc
 
 With "Price label verification" ticked, RapidOCR (PP-OCR on ONNX Runtime, Apache-2.0) reads each tag found by the price-tag model, then the whole image for tags the model missed (text printed on a detected product is ignored). Only price-like text is kept: a ₹/Rs/MRP marker or a number with two decimals, or a single bare number on a yellow tag (the ₹ sign is often misread). Each tag is linked to the identified product in its slot (calibrated layout) or to the identified product directly above it (heuristic), then compared with the catalogue `expected_price`. A tag stays unlinked when its slot holds different identified products, a product other than the slot's planogram SKU, or two different price readings. Products without a linked tag stay `Unverified`; price status never changes a product's identity or placement status. Planogram SKUs need an `expected_price` in `data/catalogue.csv` to be verified (two of them currently have none).
 
+### AI chatbot
+
+The floating **Ask ShelfSense** assistant is available on the dashboard and shared workspace pages. It can explain the current or latest audit using stored scores, slot findings, product identities, and price checks. It does not send uploaded images or image paths to the chat provider. If chat is not configured, the panel explains how to enable it; audit and dashboard features continue to work.
+
+Chat supports Google Gemini `generateContent` endpoints and OpenAI-compatible Chat Completions endpoints through Python's standard library, so it adds no package dependency. Set these server-side environment variables before starting Flask:
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `SHELFSENSE_CHAT_API_KEY` | Yes | — | Provider API key. It is read only by the Flask backend and is never sent to browser code. |
+| `SHELFSENSE_CHAT_API_URL` | No | `https://api.openai.com/v1/chat/completions` | Provider endpoint. Gemini `generateContent` URLs and OpenAI-compatible Chat Completions URLs are supported. |
+| `SHELFSENSE_CHAT_MODEL` | No | `gpt-4o-mini` | Model name for OpenAI-compatible providers. Gemini model selection is part of its endpoint URL. |
+
+The project root contains a local `.env` file with the optional URL/model already set. Paste your provider key after `SHELFSENSE_CHAT_API_KEY=` and restart `app.py`. The file is ignored by Git. Environment variables set by the operating system take precedence over values in `.env`. The endpoint times out after 20 seconds and reports missing configuration, invalid reports, and provider errors in the chat panel.
+
 ### Labelled test set
 
 `data/test_set/` holds synthetic shelf scenes built from the catalogue images, with exact ground truth:

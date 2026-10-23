@@ -12,7 +12,7 @@ import threading
 from pathlib import Path
 
 PRICE_PATTERN = re.compile(
-    r"(?:(?:₹|rs\.?|inr|mrp)\s*:?\s*(?P<marked>\d{1,5}(?:[.,]\s*\d{1,2})?))|(?P<decimal>\d{1,5}\s*[.,]\s*\d{2})(?!\d)",
+    r"(?:(?:\u20b9|rs\.?|inr|mrp|\$)\s*:?\s*(?P<marked>\d{1,5}(?:[.,]\s*\d{1,2})?))|(?P<decimal>\d{1,5}\s*[.,]\s*\d{2})(?!\d)",
     re.IGNORECASE,
 )
 
@@ -93,10 +93,14 @@ class PriceTagReader:
                     price, rule = float(bare.group(1)), "bare number on yellow label (inferred)"
             if price is None:
                 continue
-            tags.append({"text": str(text), "price": price, "confidence": round(confidence, 4), "box": box, "rule": rule})
+            tags.append({
+                "text": f"{price:.2f}", "raw_ocr_text": str(text), "price": price,
+                "confidence": round(confidence, 4), "box": box, "rule": rule,
+            })
         return tags
 
-    def read_crop(self, image_path: str | Path, box: list[float], min_confidence: float = 0.5) -> dict:
+    def read_crop(self, image_path: str | Path, box: list[float], min_confidence: float = 0.5,
+                  image_width: int | None = None, image_height: int | None = None) -> dict:
         """OCR a single detector box with clipped image boundaries and explicit review status."""
         import numpy as np
         from PIL import Image
@@ -104,7 +108,10 @@ class PriceTagReader:
         with Image.open(image_path) as opened:
             image = opened.convert("RGB")
             width, height = image.size
-            x1, y1, x2, y2 = box
+            x1, y1, x2, y2 = (float(value) for value in box)
+            if image_width and image_height:
+                x_scale, y_scale = width / float(image_width), height / float(image_height)
+                x1, x2, y1, y2 = x1 * x_scale, x2 * x_scale, y1 * y_scale, y2 * y_scale
             left, top = max(0, min(width, int(x1))), max(0, min(height, int(y1)))
             right, bottom = max(0, min(width, int(x2 + 0.999))), max(0, min(height, int(y2 + 0.999)))
             if right <= left or bottom <= top:
@@ -142,6 +149,7 @@ class PriceTagReader:
             status, price = "unreadable", None
         scores = [score for _text, score in accepted]
         return {
+            "text": f"{price:.2f}" if price is not None else "",
             "raw_ocr_text": raw_text,
             "price": price,
             "ocr_confidence": round(max(scores), 4) if scores else None,
@@ -157,5 +165,6 @@ def read_price_tags(image_path: str | Path, min_confidence: float = 0.5) -> list
     return _reader.read_prices(image_path, min_confidence)
 
 
-def read_price_crop(image_path: str | Path, box: list[float], min_confidence: float = 0.5) -> dict:
-    return _reader.read_crop(image_path, box, min_confidence)
+def read_price_crop(image_path: str | Path, box: list[float], min_confidence: float = 0.5,
+                    image_width: int | None = None, image_height: int | None = None) -> dict:
+    return _reader.read_crop(image_path, box, min_confidence, image_width, image_height)

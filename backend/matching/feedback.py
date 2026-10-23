@@ -112,11 +112,12 @@ def load_feedback_references(data_dir: Path, catalogue_skus: set[str]) -> list[d
 
 
 def feedback_accuracy(records: list[dict[str, Any]], threshold: float, margin: float) -> dict[str, Any]:
-    """How the matcher's top guess fared on reviewed crops at a threshold/margin.
+    """How the matcher's top guess fared on reviewed crops at a score threshold.
 
     Only verdicts recorded with the model's top guess and scores count. "accepted" crops are
-    those the threshold/margin would accept; they are correct when the top guess equals the
-    reviewer's SKU (a crop marked "not a product" is never a correct acceptance).
+    those whose best SKU score is above the threshold; they are correct when the top guess equals
+    the reviewer's SKU (a crop marked "not a product" is never a correct acceptance). ``margin``
+    remains in the signature for compatibility; it is reported as ambiguity context, not a gate.
     """
     scored = [
         record for record in records
@@ -124,7 +125,7 @@ def feedback_accuracy(records: list[dict[str, Any]], threshold: float, margin: f
         and record.get("model_top_sku")
     ]
     accepted = [record for record in scored
-                if record["model_top_similarity"] >= threshold and record["model_top_margin"] >= margin]
+                if record["model_top_similarity"] > threshold]
     correct = sum(record.get("decision") != "not_product" and record.get("true_sku") == record["model_top_sku"]
                   for record in accepted)
     in_catalogue = [record for record in scored if record.get("decision") != "not_product"]

@@ -22,6 +22,7 @@ class PriceParsingTests(unittest.TestCase):
     def test_prices_require_currency_marker_or_two_decimals(self):
         cases = {"₹ 45.00": 45.0, "45.00": 45.0, "Rs. 120": 120.0, "MRP:99": 99.0, "₹85": 85.0,
                  "500 g": None, "2024": None, "12.5": None, "": None}
+        cases["\u20b9 45"] = 45.0
         for text, expected in cases.items():
             self.assertEqual(parse_price(text), expected, text)
 
@@ -64,6 +65,41 @@ class PriceParsingTests(unittest.TestCase):
                 self.skipTest(str(error))
         self.assertEqual(result["ocr_status"], "unreadable")
         self.assertIsNone(result["price"])
+
+    def test_crop_coordinates_scale_from_detector_dimensions_to_stored_image(self):
+        import numpy as np
+
+        class FakeOcr:
+            def __call__(self, image):
+                self.shape = image.shape
+                return [([], "45.00", 0.99)], None
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "shelf.png"
+            Image.new("RGB", (200, 100), "white").save(path)
+            reader = PriceTagReader()
+            fake = FakeOcr()
+            reader._ocr = fake
+            result = reader.read_crop(path, [20, 10, 40, 30], image_width=100, image_height=50)
+        self.assertEqual(result["price"], 45.0)
+        self.assertEqual(result["text"], "45.00")
+        self.assertEqual(fake.shape[:2], (80, 80))  # 40x40 image crop, enlarged 2x
+
+    def test_ocr_value_contains_only_the_parsed_numeric_amount(self):
+        class FakeOcr:
+            def __call__(self, _image):
+                return [([], "MRP Rs. 129.00 only", 0.99)], None
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "tag.png"
+            Image.new("RGB", (220, 100), "white").save(path)
+            reader = PriceTagReader()
+            reader._ocr = FakeOcr()
+            result = reader.read_crop(path, [0, 0, 220, 100])
+
+        self.assertEqual(result["ocr_status"], "read")
+        self.assertEqual(result["text"], "129.00")
+        self.assertEqual(result["raw_ocr_text"], "MRP Rs. 129.00 only")
 
     def test_multiple_price_readings_are_ambiguous(self):
         class FakeOcr:
@@ -128,6 +164,7 @@ class AuxiliaryDetectorTests(unittest.TestCase):
         ocr = read_price_crop(image, tag["box"], min_confidence=0.5)
         self.assertEqual(ocr["ocr_status"], "read")
         self.assertEqual(ocr["raw_ocr_text"], "50 .00")
+        self.assertEqual(ocr["text"], "50.00")
         self.assertEqual(ocr["price"], 50.0)
 
 

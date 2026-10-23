@@ -106,13 +106,36 @@ class RecognitionAndComparisonTests(DataDirMixin, unittest.TestCase):
     def test_confident_match_with_valid_calibration_and_trusted_slot_is_correct(self):
         result = self.run_pipeline([(RED, SLOT1_BOX), (BLUE, SLOT2_BOX)], [SLOT1_BOX, SLOT2_BOX])
         self.assertEqual(result["calibration"]["state"], "valid")
+        self.assertEqual(result["calibration"]["acceptance_threshold"], 0.4)
+        self.assertEqual(result["calibration"]["calibrated_threshold"], 0.9)
+        self.assertEqual(result["calibration"]["threshold_source"], "configured_default")
         self.assertEqual([match["reason_code"] for match in result["matches"]], ["accepted", "accepted"])
         self.assertEqual([match["accepted_sku"] for match in result["matches"]], ["RED", "BLUE"])
         self.assertEqual(self.slot_statuses(result), {"1": ["Correct"], "2": ["Correct"]})
 
+    def test_sku_score_above_point_five_identifies_independently_of_detector_confidence(self):
+        image_path = self.root / "shelf.png"
+        dark_red = (150, 60, 60)
+        shelf_image([(dark_red, SLOT1_BOX)]).save(image_path)
+        result = self.pipeline().run(
+            image_path, [detection(SLOT1_BOX) | {"confidence": 0.10}],
+            self.catalogue, self.planogram, slot_mapper=CoordinateShelfMapper(trusted=True),
+            acceptance_threshold=0.50, minimum_margin=0.05,
+        )
+        match = result["matches"][0]
+        self.assertGreater(match["top_similarity"], 0.50)
+        self.assertEqual(match["accepted_sku"], "RED")
+        self.assertEqual(match["reason_code"], "accepted")
+
+    def test_high_detector_confidence_does_not_bypass_low_sku_similarity(self):
+        result = self.run_pipeline([(GREY, SLOT1_BOX)], [SLOT1_BOX], acceptance_threshold=0.6)
+        self.assertEqual(result["matches"][0]["detector_confidence"], 0.9)
+        self.assertIsNone(result["matches"][0]["accepted_sku"])
+        self.assertEqual(result["matches"][0]["reason_code"], "below_threshold")
+
     # 2
     def test_insufficient_similarity_stays_needs_review(self):
-        result = self.run_pipeline([(GREY, SLOT1_BOX), (BLUE, SLOT2_BOX)], [SLOT1_BOX, SLOT2_BOX])
+        result = self.run_pipeline([(GREY, SLOT1_BOX), (BLUE, SLOT2_BOX)], [SLOT1_BOX, SLOT2_BOX], acceptance_threshold=0.6)
         grey = result["matches"][0]
         self.assertIsNone(grey["accepted_sku"])
         self.assertEqual(grey["reason_code"], "below_threshold")
@@ -121,15 +144,15 @@ class RecognitionAndComparisonTests(DataDirMixin, unittest.TestCase):
         self.assertEqual(self.slot_statuses(result)["1"], ["Needs Review"])
 
     # 3
-    def test_insufficient_top_two_margin_stays_needs_review(self):
+    def test_best_sku_is_identified_when_score_passes_even_with_small_margin(self):
         self.write_calibration(self.root, threshold=0.6, minimum_margin=0.05)
         result = self.run_pipeline([(PURPLE, SLOT1_BOX)], [SLOT1_BOX])
         purple = result["matches"][0]
         self.assertGreaterEqual(purple["top_similarity"], 0.6)
         self.assertLess(purple["top_margin"], 0.05)
-        self.assertEqual(purple["reason_code"], "low_margin")
-        self.assertIsNone(purple["accepted_sku"])
-        self.assertEqual(self.slot_statuses(result)["1"], ["Needs Review"])
+        self.assertEqual(purple["reason_code"], "accepted")
+        self.assertEqual(purple["accepted_sku"], "RED")  # deterministic top-ranked candidate
+        self.assertEqual(self.slot_statuses(result)["1"], ["Correct"])
 
     # 4
     def test_missing_or_invalid_calibration_fails_closed_with_actionable_issue(self):
@@ -150,12 +173,10 @@ class RecognitionAndComparisonTests(DataDirMixin, unittest.TestCase):
                     path.write_text(content, encoding="utf-8")
                 result = self.run_pipeline([(RED, SLOT1_BOX), (BLUE, SLOT2_BOX)], [SLOT1_BOX, SLOT2_BOX])
                 calibration = result["calibration"]
-                self.assertIsNone(calibration["acceptance_threshold"])
+                self.assertEqual(calibration["acceptance_threshold"], 0.4)
                 self.assertEqual([issue["code"] for issue in calibration["issues"]], [code])
                 self.assertIn("python -m tools.calibrate_matching", calibration["issues"][0]["message"])
-                self.assertTrue(all(match["reason_code"] == "no_calibration" for match in result["matches"]))
-                self.assertTrue(all(match["accepted_sku"] is None for match in result["matches"]))
-                self.assertNotIn("Correct", sum(self.slot_statuses(result).values(), []))
+                self.assertEqual([match["accepted_sku"] for match in result["matches"]], ["RED", "BLUE"])
 
     # 5
     def test_recognised_sku_with_untrusted_mapping_is_not_correct(self):
@@ -214,10 +235,10 @@ class RecognitionAndComparisonTests(DataDirMixin, unittest.TestCase):
             {"decision": "correct", "true_sku": "E"},  # recorded without model scores: not counted
         ]
         strict = feedback_accuracy(records, 0.60, 0.05)
-        self.assertEqual((strict["reviewed"], strict["accepted"], strict["correct"], strict["precision"]), (4, 1, 1, 1.0))
+        self.assertEqual((strict["reviewed"], strict["accepted"], strict["correct"], strict["precision"]), (4, 2, 2, 1.0))
         loose = feedback_accuracy(records, 0.50, 0.05)
-        self.assertEqual((loose["accepted"], loose["correct"], loose["precision"]), (3, 1, 0.3333))
-        self.assertEqual(loose["coverage"], 0.3333)  # 1 of 3 in-catalogue crops found
+        self.assertEqual((loose["accepted"], loose["correct"], loose["precision"]), (4, 2, 0.5))
+        self.assertEqual(loose["coverage"], 0.6667)  # 2 of 3 in-catalogue crops found
 
     # 11
     def test_matcher_and_detector_mismatch_are_detected_and_reported(self):
@@ -225,7 +246,7 @@ class RecognitionAndComparisonTests(DataDirMixin, unittest.TestCase):
         result = self.run_pipeline([(RED, SLOT1_BOX)], [SLOT1_BOX])
         self.assertEqual(result["calibration"]["state"], "model_mismatch")
         self.assertEqual(result["calibration"]["issues"][0]["code"], "calibration_model_mismatch")
-        self.assertIsNone(result["matches"][0]["accepted_sku"])
+        self.assertEqual(result["matches"][0]["accepted_sku"], "RED")
 
         detector_file = self.root / "detector.pt"
         detector_file.write_bytes(b"current checkpoint")
@@ -392,7 +413,7 @@ class AuditFlowTests(DataDirMixin, unittest.TestCase):
         calibration = relaxed["matching_audit"]["calibration"]
         self.assertEqual((calibration["acceptance_threshold"], calibration["threshold_source"]), (0.9, "operator"))
         self.assertEqual(relaxed["analysis_options"]["match_threshold"], 0.9)
-        self.assertIn("operator-set threshold 0.9", " ".join(relaxed["limitations"]))
+        self.assertIn("operator-set similarity threshold 0.9", " ".join(relaxed["limitations"]))
 
         (self.root / "settings.json").write_text(json.dumps({"match_threshold": 0.95}), encoding="utf-8")
         from_settings = self.audit([(dark_red, SLOT1_BOX)], [SLOT1_BOX])
@@ -424,7 +445,7 @@ class AuditFlowTests(DataDirMixin, unittest.TestCase):
         self.assertEqual(json.loads((self.root / "settings.json").read_text(encoding="utf-8"))["match_threshold"], 0.45)
         self.client.post("/settings/save", data={"match_reset": "1"})
         saved = json.loads((self.root / "settings.json").read_text(encoding="utf-8"))
-        self.assertEqual((saved["match_threshold"], saved["match_margin"]), (0.50, None))
+        self.assertEqual((saved["match_threshold"], saved["match_margin"]), (0.40, None))
         page = self.client.get("/settings").data
         self.assertIn(b"Product Matching", page)
         self.assertIn(b'name="match_threshold"', page)
